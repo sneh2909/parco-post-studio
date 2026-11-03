@@ -177,6 +177,13 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
 .deco-b canvas{width:56px;height:42px;display:block;border-radius:6px;background:#ffffff}
 .cut{width:min(900px,100%)}
 .ideas{width:min(1100px,100%)}
+.wk-cal{display:flex;flex-direction:column;gap:10px}
+.wk-row{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--panel-2)}
+.wk-row canvas{width:110px;height:110px;border-radius:8px;flex:none}
+.wk-info{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:1}
+.wk-info b{flex-basis:100%}.wk-info small{flex-basis:100%;color:var(--muted)}
+.wk-chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.wk-flag{color:#b45309!important;font-weight:600}.wk-ops{display:flex;gap:6px;flex-wrap:wrap}
 .ideas-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 @media (max-width:760px){.ideas-grid{grid-template-columns:1fr}}
 .idea{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--panel-2);min-width:0}
@@ -273,6 +280,7 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
 
 <header class="top"><div class="wrap top-in">
   <div class="brand"><span class="logo"><img id="hdrLogo" alt="PARCO Engineering Corporation"></span><span>Post Studio</span></div>
+  <button class="btn sm" type="button" id="aiBtn" title="Connect an AI key for post text and design ideas">✦ AI settings</button>
   <div class="who" id="who" hidden>Signed in as <b id="whoName"></b><button class="btn sm" type="button" id="usersBtn" hidden>Users</button><button class="btn sm" type="button" id="signOut">Sign out</button></div>
 </div></header>
 
@@ -295,6 +303,7 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
         </label>
         <div class="phs" id="phs"></div>
         <div class="ph-hint" id="phHint" hidden></div>
+        <div class="ph-hint" id="cutHint" hidden aria-live="polite"></div>
         <p class="note">Or add a sample photo:</p>
         <div class="picks" id="picks"></div>
         <div class="slot">
@@ -462,6 +471,13 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
     <!-- CAPTION -->
     <div class="tabpanel" id="p-caption" role="tabpanel" hidden>
       <div class="sec">
+        <h3 class="sec-h">Caption language <span class="aside">Each version is kept, so you can switch back</span></h3>
+        <div class="seg" id="capLangs" role="group" aria-label="Caption language"></div>
+        <label class="chk"><input type="checkbox" id="capPost">Also translate the text on the post</label>
+        <div class="cap-actions"><button class="btn sm" id="capRegen" type="button">Write again in this language</button></div>
+        <p class="status" id="capStatus" aria-live="polite"></p>
+      </div>
+      <div class="sec">
         <h3 class="sec-h">Instagram / Facebook caption</h3>
         <textarea id="caption" data-k="caption" rows="9"></textarea>
         <label class="f">Hashtags<textarea id="hashtags" data-k="hashtags" rows="3"></textarea></label>
@@ -487,6 +503,7 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
       <button class="btn big" id="dlAll" type="button">All 3 sizes</button>
       <button class="btn hi big" id="save" type="button">Save to library</button>
       <button class="btn big" id="ideasBtn" type="button">✦ Design ideas</button>
+      <button class="btn big" id="weekBtn" type="button">📅 Plan a week</button>
       <button class="btn big" id="addTextBtn" type="button">＋ Text</button>
       <span class="grow"></span>
       <button class="btn big" id="newPost" type="button">New post</button>
@@ -570,6 +587,27 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
   <div class="ideas-grid" id="ideasGrid"></div>
   <div class="cap-actions"><button class="btn" type="button" id="ideasMore">Show 3 more</button><button class="btn" type="button" id="ideasClose">Close</button></div>
 </div></div>
+<div class="modal" id="weekModal" hidden><div class="modal-box ideas">
+  <h3>Plan a week of posts</h3>
+  <p class="note">Paste one product per line: the name, a colon, then a short write-up. One AI call plans the week; captions are written one post at a time so the free AI limits are not hit. Drafts go to your library with their dates. Nothing is posted for you.</p>
+  <label class="f">Products<textarea id="wkList" rows="6" placeholder="CGP water pump: part no. 1234344, fits Greaves CIFA and Conmat transit mixers. Ready stock in Ahmedabad.&#10;Hydraulic pump: for Schwing Stetter concrete pumps, supply across India."></textarea></label>
+  <div class="row2"><label class="f">Number of posts<select id="wkN"><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option></select></label><label class="f">First day<input type="date" id="wkStart"></label></div>
+  <div class="row2"><label class="f">Language<select id="wkLang"><option>English</option><option>Hinglish</option><option>Hindi</option><option>Gujarati</option></select></label><label class="f">Tone<select id="wkTone"></select></label></div>
+  <div class="cap-actions"><button class="btn primary" type="button" id="wkPlan">Plan the week</button></div>
+  <p class="status" id="wkMsg" aria-live="polite"></p>
+  <div class="wk-cal" id="wkCal"></div>
+  <div class="cap-actions"><span id="wkActs" hidden style="display:contents"><button class="btn hi" type="button" id="wkDrafts">Save as drafts in library</button><button class="btn" type="button" id="wkCaps">Write all captions</button><button class="btn" type="button" id="wkExport">Export PNGs (3 sizes) + CSV</button></span><button class="btn" type="button" id="wkClose">Close</button></div>
+</div></div>
+<div class="modal" id="aiModal" hidden><div class="modal-box users">
+  <h3>AI settings</h3>
+  <p class="note">Paste your own API key to turn on AI post text and AI design ideas. The key is saved only in this browser, on this device. It is never added to the website. When you use AI, your write-up and photos are sent to the provider you choose below.</p>
+  <label class="f">Provider<select id="aiProv"><option value="gemini">Google Gemini (free tier available)</option><option value="claude">Anthropic Claude</option></select></label>
+  <label class="f">API key<input type="password" id="aiKey" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste your key"></label>
+  <label class="f">Model (optional)<input type="text" id="aiModel" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+  <p class="note" id="aiHelp"></p>
+  <p class="status" id="aiMsg" aria-live="polite"></p>
+  <div class="cap-actions"><button class="btn primary" type="button" id="aiSave">Save</button><button class="btn" type="button" id="aiTest">Save &amp; test</button><button class="btn danger" type="button" id="aiRemove">Remove key</button><button class="btn" type="button" id="aiClose">Close</button></div>
+</div></div>
 <div class="toast" id="toast" hidden></div>
 <div class="modal" id="modal" hidden><div class="modal-box">
   <h3 id="mTitle">Save your post</h3>
@@ -646,6 +684,7 @@ function exampleState(){
     caption:'Ready stock: CGP water pump (Part No. 1234344) for Greaves CIFA and Conmat transit mixers.\n\nPARCO Engineering Corporation, Ahmedabad also supplies transit mixer spares for Schwing Stetter, Putzmeister, Venus and KYB, with supply across India.\n\nWhatsApp your enquiry: +91 63527 76505',
     hashtags:DEFAULT_TAGS,
     waText:'Ready stock: CGP water pump for Greaves CIFA / Conmat transit mixers. Pan-India supply. Enquire: +91 63527 76505',
+    captions:{}, capLang:'',
     photos:[], bgPhoto:null, brandImg:null, active:0
   };
 }
@@ -1937,9 +1976,9 @@ function snap(){ return JSON.stringify({o:state.offsets||{},d:state.decos||{},t:
 function updUndo(){ $('undoBtn').disabled=!UNDO.length; $('redoBtn').disabled=!REDO.length; }
 function pushUndo(){ const v=snap(); if(UNDO[UNDO.length-1]===v) return; UNDO.push(v); if(UNDO.length>80) UNDO.shift(); REDO=[]; updUndo(); }
 function applySnap(v){ const d=JSON.parse(v); state.offsets=d.o; state.decos=d.d||{}; state.texts=d.t||{}; d.p.forEach((a,i)=>{ const ph=state.photos[i]; if(ph){ ph.ox=a[0]; ph.oy=a[1]; ph.zoom=a[2]; } }); syncPhotoUI(); updSel(); render(); }
-function undo(){ if(!UNDO.length) return; const v=UNDO.pop(); if(v==='__style__'){ const st=STYLE_UNDO.pop(); if(st){ Object.assign(state,JSON.parse(st)); syncUI(); render(); } updUndo(); return; } REDO.push(snap()); applySnap(v); updUndo(); }
+function undo(){ if(!UNDO.length) return; const v=UNDO.pop(); if(v==='__photo__'){ undoPhoto(); updUndo(); return; } if(v==='__style__'){ const st=STYLE_UNDO.pop(); if(st){ Object.assign(state,JSON.parse(st)); SEL=null; updSel(); syncUI(); render(); } updUndo(); return; } REDO.push(snap()); applySnap(v); updUndo(); }
 function redo(){ if(!REDO.length) return; UNDO.push(snap()); applySnap(REDO.pop()); updUndo(); }
-function clearHistory(){ UNDO=[]; REDO=[]; STYLE_UNDO=[]; updUndo(); }
+function clearHistory(){ UNDO=[]; REDO=[]; STYLE_UNDO=[]; PHOTO_UNDO=[]; updUndo(); if(!cutQBusy) cutHint(''); }
 $('undoBtn').onclick=undo; $('redoBtn').onclick=redo;
 function selRect(){ return SEL?hitRects.filter(x=>x.kind==='el'&&x.id===SEL).pop():null; }
 function handleAt(p){ const h=selRect(); if(!h) return null; const r=h.r, tol=Math.max(26,cv.width/cv.getBoundingClientRect().width*18);
@@ -2076,7 +2115,7 @@ function syncUI(){ updateShowAvail();
   const bimg=state.brandLogo==='nasco'?ASSETS.nasco:(state.brandLogo==='custom'&&state.brandImg?state.brandImg.src:null);
   $('brThumb').hidden=!bimg; if(bimg) $('brThumb').src=bimg;
   $('bgThumb').hidden=!state.bgPhoto; $('bgRemove').hidden=!state.bgPhoto; if(state.bgPhoto){ $('bgThumb').src=state.bgPhoto.src; $('bgLbl').textContent='Shown faded behind the product (Showcase, Spec Sheet, Ribbon, Spotlight, Catalog)'; } else $('bgLbl').textContent='Optional · a plant, site or truck photo shown faded behind the product';
-  renderSpecs(); syncPhotoUI(); renderPhotoList();
+  renderSpecs(); syncPhotoUI(); renderPhotoList(); paintCapLangs();
 }
 function syncPhotoUI(){
   const ph=state.photos[state.active]; const dis=!ph; ['z','ox','oy','phReset'].forEach(id=>$(id).disabled=dis);
@@ -2124,8 +2163,8 @@ document.addEventListener('click',async e=>{
   if(b.dataset.grp){ showGroup(+b.dataset.grp); return; }
   if(b.dataset.grpgo){ $('t-style').click(); showGroup(+b.dataset.grpgo); $('grp').scrollIntoView({block:'nearest'}); return; }
   if(b.dataset.cut!==undefined){ openCut(+b.dataset.cut); return; }
-  if(b.dataset.uncut!==undefined){ const i=+b.dataset.uncut, ph=state.photos[i]; if(ph&&ph.orig){ const o=ph.orig; try{ state.photos[i]=await makePhoto({...o,label:ph.label}); }catch{} syncUI(); render(); toast('Original photo restored'); } return; }
-  if(b.dataset.del!==undefined){ state.photos.splice(+b.dataset.del,1); state.active=Math.max(0,Math.min(state.active,state.photos.length-1)); syncUI(); render(); return; }
+  if(b.dataset.uncut!==undefined){ const i=+b.dataset.uncut, ph=state.photos[i]; if(ph&&ph.orig){ const o=ph.orig; try{ state.photos[i]=await makePhoto({...o,label:ph.label}); state.photos[i].cutDismissed=true; }catch{} syncUI(); render(); toast('Original photo restored'); } return; }
+  if(b.dataset.del!==undefined){ state.photos.splice(+b.dataset.del,1); state.active=Math.max(0,Math.min(state.active,state.photos.length-1)); syncUI(); render(); hintMessy(); return; }
   if(b.dataset.specdel!==undefined){ state.specs.splice(+b.dataset.specdel,1); renderSpecs(); render(); return; }
 });
 $('szReset').onclick=()=>{ state.sizes={head:1,text:1,foot:1,logo:1,brand:1,photo:1}; state.textScale=1; syncUI(); render(); };
@@ -2136,8 +2175,8 @@ $('phReset').onclick=()=>{ const ph=state.photos[state.active]; if(!ph) return; 
 
 async function addFiles(files){
   const list=[...files].filter(f=>f.type.startsWith('image/')); if(!list.length) return;
-  for(const f of list){ try{ state.photos.push(await makePhoto({src:URL.createObjectURL(f),label:'',png:f.type==='image/png'})); }catch{ toast('One photo could not be opened. Try a JPG or PNG.'); } }
-  state.active=state.photos.length-1; syncUI(); render();
+  const added=[]; for(const f of list){ try{ const p=await makePhoto({src:URL.createObjectURL(f),label:'',png:f.type==='image/png'}); state.photos.push(p); added.push(p); }catch{ toast('One photo could not be opened. Try a JPG or PNG.'); } }
+  state.active=state.photos.length-1; syncUI(); render(); checkMessy(added);
 }
 $('file').addEventListener('change',e=>{ addFiles(e.target.files); e.target.value=''; });
 $('bgFile').addEventListener('change',async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; try{ state.bgPhoto=await makePhoto({src:URL.createObjectURL(f)}); state.show.bg=true; syncUI(); render(); }catch{ toast('That background photo could not be opened.'); } });
@@ -2190,7 +2229,61 @@ const LOCAL=(()=>{
   return {mergeUserPosts,setUser:u=>{ USER=String(u||'team'); },db:{collection,doc:p=>{ const i=p.lastIndexOf('/'); return collection(p.slice(0,i)).doc(p.slice(i+1)); }},assets,downloads};
 })();
 const use=n=>Promise.resolve(n==='db'?LOCAL.db:n==='assets'?LOCAL.assets:n==='downloads'?LOCAL.downloads:null);
-const cap={sample:use('sample'),downloads:use('downloads'),db:use('db'),assets:use('assets'),user:use('user')};
+/* ---------- AI provider (bring your own key; stored in this browser only) ---------- */
+const AI=(()=>{
+  const K='parco-ai-v1', DEF={gemini:'gemini-2.5-flash',claude:'claude-sonnet-5-5'};
+  const HELP={gemini:'Get a free key at aistudio.google.com/apikey. Default model: '+DEF.gemini+'.',claude:'Get a key at console.anthropic.com. Default model: '+DEF.claude+'.'};
+  const load=()=>{ try{ const o=JSON.parse(localStorage.getItem(K)); return o&&o.key?o:null; }catch{ return null; } };
+  const store=c=>{ try{ if(c) localStorage.setItem(K,JSON.stringify(c)); else localStorage.removeItem(K); }catch{} };
+  let cfg=load();
+  const err=(code,message)=>Object.assign(new Error(message||code),{code});
+  const b64=b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(b); });
+  const parse=t=>{ t=String(t||'').replace(/^\s*```(?:json)?\s*|\s*```\s*$/g,'').trim(); try{ return JSON.parse(t); }catch{} const a=t.indexOf('{'), z=t.lastIndexOf('}'); if(a>=0&&z>a){ try{ return JSON.parse(t.slice(a,z+1)); }catch{} } throw err('bad_response','The AI reply could not be read. Please try again.'); };
+  async function http(url,init,hasImages){
+    let res; try{ res=await fetch(url,init); }catch{ throw err('network','Could not reach the AI service. Check your internet connection.'); }
+    if(res.ok) return res.json();
+    let msg=''; try{ const j=await res.json(); msg=(j.error&&(j.error.message||j.error))||''; }catch{} msg=String(msg);
+    if(res.status===429) throw err('rate_limited','Too many requests just now.');
+    if(res.status===401||res.status===403||/api key|credential|authenticat|permission/i.test(msg)) throw err('bad_key','The AI key was not accepted. Check it in AI settings.');
+    if(res.status===400&&hasImages) throw err('image_rejected',msg);
+    throw err('api_error',msg||('AI service error '+res.status));
+  }
+  async function run(prompt,images){
+    const c=cfg; if(!c||!c.key) throw err('not_granted','No AI key set.');
+    const model=(c.model||DEF[c.provider]||'').trim(); const imgs=await Promise.all((images||[]).map(async b=>({type:b.type||'image/jpeg',data:await b64(b)})));
+    if(c.provider==='claude'){
+      const content=[...imgs.map(i=>({type:'image',source:{type:'base64',media_type:i.type,data:i.data}})),{type:'text',text:prompt}];
+      const d=await http('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:2500,messages:[{role:'user',content}]})},imgs.length>0);
+      return parse((d.content||[]).filter(x=>x.type==='text').map(x=>x.text).join(''));
+    }
+    const parts=[{text:prompt},...imgs.map(i=>({inline_data:{mime_type:i.type,data:i.data}}))];
+    const d=await http('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':c.key},body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',temperature:0.8}})},imgs.length>0);
+    const t=((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(x=>x.text||'').join('');
+    if(!t) throw err('blocked','The AI did not return an answer for this one. Edit the text and try again.');
+    return parse(t);
+  }
+  const api={ limits:async()=>({images:{maxCount:4}}), json:(prompt,opts)=>run(prompt,opts&&opts.images) };
+  return {
+    get:()=>Promise.resolve(cfg?api:null), on:()=>!!cfg, test:()=>run('Reply with only this JSON: {"ok":true}',[]),
+    set(c){ cfg=c&&c.key?c:null; store(cfg); this.paint(); }, cfg:()=>cfg, DEF, HELP,
+    paint(){ const b=$('aiBtn'); if(b){ b.textContent=cfg?'✦ AI on':'✦ AI settings'; b.classList.toggle('hi',!cfg); } }
+  };
+})();
+const cap={get sample(){ return AI.get(); },downloads:use('downloads'),db:use('db'),assets:use('assets'),user:use('user')};
+(function(){
+  const prov=$('aiProv'), key=$('aiKey'), model=$('aiModel'), msg=$('aiMsg');
+  const say=(m,cls)=>{ msg.textContent=m||''; msg.className='status'+(cls?' '+cls:''); };
+  const fill=()=>{ const c=AI.cfg(); prov.value=(c&&c.provider)||prov.value||'gemini'; key.value=c?c.key:''; model.value=(c&&c.provider===prov.value&&c.model)||''; model.placeholder=AI.DEF[prov.value]; $('aiHelp').textContent=AI.HELP[prov.value]; };
+  const open=()=>{ fill(); say(''); $('aiModal').hidden=false; setTimeout(()=>key.focus(),50); };
+  window.openAiSettings=open;
+  $('aiBtn').onclick=open; $('aiClose').onclick=()=>{ $('aiModal').hidden=true; };
+  prov.onchange=()=>{ model.value=''; model.placeholder=AI.DEF[prov.value]; $('aiHelp').textContent=AI.HELP[prov.value]; };
+  const save=()=>{ const k=key.value.trim(); if(!k){ say('Paste your API key first.','warn'); return false; } AI.set({provider:prov.value,key:k,model:model.value.trim()}); return true; };
+  $('aiSave').onclick=()=>{ if(save()){ say('Saved. AI is on for this browser.','ok'); toast('AI key saved on this device'); } };
+  $('aiTest').onclick=async()=>{ if(!save()) return; const b=$('aiTest'); b.disabled=true; say('Testing…'); try{ await AI.test(); say('Works. AI is ready.','ok'); }catch(e){ say(e&&e.message||'Test failed.','warn'); } finally{ b.disabled=false; } };
+  $('aiRemove').onclick=()=>{ AI.set(null); key.value=''; model.value=''; say('Key removed from this browser.','ok'); };
+  AI.paint();
+})();
 
 /* ---------- export ---------- */
 function slug(s){ return (String(s||'parco-post').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'parco-post').slice(0,48); }
@@ -2256,6 +2349,7 @@ function applyCopy(r){
   if(Array.isArray(r.bullets)&&r.bullets.length) T.bullets=r.bullets.map(str).filter(Boolean).slice(0,6);
   if(Array.isArray(r.photo_labels)) r.photo_labels.forEach((l,i)=>{ const ph=state.photos[i]; if(ph&&str(l)&&!ph.label.trim()) ph.label=str(l); });
   if(str(r.cta)) T.cta=str(r.cta); if(str(r.caption)) state.caption=str(r.caption); if(str(r.hashtags)) state.hashtags=str(r.hashtags); if(str(r.whatsapp)) state.waText=str(r.whatsapp);
+  if(str(r.caption)){ state.capLang=state.lang; const c=capStore(); delete c[state.lang]; keepCap(); } scriptFonts().then(render);
 }
 function localCopy(){
   const parts=state.writeup.split(/(?<=[.!?])\s+|\n+/).map(s=>s.trim()).filter(Boolean);
@@ -2271,7 +2365,7 @@ $('gen').onclick=async()=>{
   if(!state.writeup.trim()&&!state.product.trim()){ setStatus('Write a few lines about the product first.','warn'); $('writeup').focus(); return; }
   genBusy=true; $('gen').disabled=true; setStatus('Writing your post…','busy');
   try{ const sample=await cap.sample;
-    if(!sample){ localCopy(); syncUI(); render(); setStatus('The website version has no AI writing, so the text was filled from your write-up. Edit it below.','warn'); return; }
+    if(!sample){ localCopy(); syncUI(); render(); setStatus('AI is off. Tap ✦ AI settings and add your key for AI writing. For now the text was filled from your write-up. Edit it below.','warn'); return; }
     const opts={modelTier:'default',cache:false};
     try{ const lim=await sample.limits(); if(lim&&lim.images&&state.photos.length){ const n=Math.min(4,lim.images.maxCount||1,state.photos.length); const blobs=[]; for(let i=0;i<n;i++) blobs.push(await photoBlob(state.photos[i],768,'image/jpeg')); opts.images=blobs; } }catch{}
     let r; try{ r=await sample.json(buildPrompt(),opts); }
@@ -2280,18 +2374,93 @@ $('gen').onclick=async()=>{
   }catch(e){ const code=e&&e.code;
     if(code==='not_granted'){ localCopy(); syncUI(); render(); setStatus('AI writing was not allowed, so the text was filled from your write-up.','warn'); }
     else if(code==='rate_limited') setStatus('Too many requests just now. Wait a minute and try again.','warn');
+    else if(code==='bad_key'||code==='network') setStatus(e.message,'warn');
     else setStatus('Could not write the post this time'+(e&&e.message?': '+e.message:'.')+' Your text is unchanged.','warn');
   }finally{ genBusy=false; $('gen').disabled=false; }
 };
 
+/* ---------- caption languages: one version per language in state.captions[lang] ---------- */
+const CAP_LANGS={English:'English',Hinglish:'Hinglish',Hindi:'हिन्दी',Gujarati:'ગુજરાતી'}, POST_KEYS=['eyebrow','headline','sub','category','cta'];
+let capBusy=false;
+const capSrc=()=>state.product+'|'+state.writeup;
+function capStore(){ state.captions=state.captions||{}; if(!state.capLang) state.capLang=state.lang||'English'; return state.captions; }
+function keepCap(){ const c=capStore(), l=state.capLang; c[l]={...(c[l]||{}),caption:state.caption||'',hashtags:state.hashtags||'',whatsapp:state.waText||''}; if(!c[l].src) c[l].src=capSrc(); }
+function postSnap(){ const T=state.text; return {...Object.fromEntries(POST_KEYS.map(k=>[k,T[k]||''])),bullets:[...(T.bullets||[])]}; }
+function applyPost(p){ const T=state.text; POST_KEYS.forEach(k=>{ if(typeof p[k]==='string'&&p[k].trim()) T[k]=p[k].trim(); }); if(Array.isArray(p.bullets)&&p.bullets.length) T.bullets=p.bullets.map(x=>String(x||'').trim()).filter(Boolean).slice(0,6); }
+// canvas text does not trigger webfont loading, and Google serves Indic scripts as separate subsets
+function scriptFonts(st){ st=st||state; const s=JSON.stringify([st.text,st.texts||{},st.specs||[],st.badges||[]]), L=[];
+  if(/[ऀ-ॿ]/.test(s)) L.push(['Noto Sans Devanagari','हिन्दी']); if(/[઀-૿]/.test(s)) L.push(['Noto Sans Gujarati','ગુજરાતી']);
+  if(!L.length||!document.fonts) return Promise.resolve(); return Promise.race([Promise.all(L.flatMap(([f,t])=>['500','700','800'].map(w=>document.fonts.load(`${w} 40px "${f}"`,t).catch(()=>{})))),new Promise(r=>setTimeout(r,5000))]); }
+function paintCapLangs(){ const box=$('capLangs'); if(!box) return; const c=state.captions||{}, cur=state.capLang||state.lang;
+  box.innerHTML=Object.entries(CAP_LANGS).map(([k,v])=>`<button type="button" data-cl="${k}" aria-pressed="${k===cur}"><b>${v}</b><small>${c[k]&&c[k].caption?(c[k].src===capSrc()?'Ready':'Older write-up'):'Write with AI'}</small></button>`).join(''); }
+function capSay(m,cls){ const el=$('capStatus'); el.className='status'+(cls&&cls!=='busy'?' '+cls:''); el.innerHTML=''; if(cls==='busy'){ el.innerHTML='<span class="spin"></span> '; el.append(m); } else el.textContent=m; }
+function capPrompt(lang,withPost,st){ st=st||state; const wa=st.text.whatsapp||'+91 63527 76505';
+  return `You write social media captions for PARCO Engineering Corporation, Ahmedabad (since 1971), an importer and distributor of spare parts for heavy earthmoving equipment, transit mixers, concrete pumps and industrial DG sets.
+Rules:
+- Enquiry-only marketing: never mention prices, discounts, offers or "buy now". Drive WhatsApp enquiries.
+- Use only facts from the write-up. Never invent specifications, part numbers or stock claims.
+- Language: ${lang}. ${LANG_NOTE[lang]||''}
+- Always keep part names, brand names, machine names and part numbers in English (Latin letters).
+- Tone: ${st.tone}.
+Product name: ${st.product||'(not given)'}
+Write-up:
+"""
+${st.writeup}
+"""
+Return only a JSON object:
+"caption": Instagram/Facebook caption, 50 to 110 words, 2-3 short paragraphs, ending with a line inviting WhatsApp enquiries on ${wa}
+"hashtags": 10 to 14 hashtags in one string separated by spaces, always including #PARCO
+"whatsapp": WhatsApp Status text, at most 45 words, ending with ${wa}`+(withPost?`
+"post": the text on the image in ${lang}: {"eyebrow": at most 18 characters, "headline": at most 22 characters, "subhead": at most 40 characters, "category": at most 26 characters, "cta": at most 22 characters, "bullets": array of ${Math.max(1,(st.text.bullets||[]).length)} lines of at most 34 characters}. Current text: ${JSON.stringify(postSnap())}`:''); }
+async function pickCapLang(l,force){
+  if(capBusy||!CAP_LANGS[l]) return; keepCap(); const from=state.capLang, withPost=$('capPost').checked, c=capStore();
+  if(withPost&&from!==l) c[from].post=postSnap();
+  const have=c[l], fresh=have&&have.caption&&have.src===capSrc()&&(!withPost||have.post);
+  if(fresh&&!force){ if(l!==from){ state.capLang=l; state.caption=have.caption; state.hashtags=have.hashtags||state.hashtags; state.waText=have.whatsapp||''; if(withPost) applyPost(have.post); syncUI(); await scriptFonts(); render(); } capSay(`Showing the ${CAP_LANGS[l]} version.`,'ok'); return; }
+  const sample=await cap.sample; if(!sample){ capSay('AI is off. Tap ✦ AI settings and add your key to write captions in other languages.','warn'); return; }
+  capBusy=true; $('capRegen').disabled=true; capSay(`Writing in ${CAP_LANGS[l]}…`,'busy');
+  try{ const r=await sample.json(capPrompt(l,withPost),{modelTier:'default',cache:false}); const str=v=>typeof v==='string'?v.trim():'';
+    if(!r||!str(r.caption)) throw Object.assign(new Error('The AI reply had no caption.'),{code:'bad_response'});
+    let post=have&&have.post; if(withPost&&r.post&&typeof r.post==='object'){ const P=r.post; post={eyebrow:str(P.eyebrow),headline:str(P.headline),sub:str(P.subhead||P.sub),category:str(P.category),cta:str(P.cta),bullets:Array.isArray(P.bullets)?P.bullets.map(str).filter(Boolean):[]}; }
+    c[l]={caption:str(r.caption),hashtags:str(r.hashtags)||state.hashtags,whatsapp:str(r.whatsapp),src:capSrc(),...(post?{post}:{})};
+    state.capLang=l; state.caption=c[l].caption; state.hashtags=c[l].hashtags; state.waText=c[l].whatsapp; if(withPost&&post) applyPost(post);
+    syncUI(); await scriptFonts(); render(); capSay(`${CAP_LANGS[l]} version ready. Edits are kept when you switch languages.`,'ok');
+  }catch(e){ const code=e&&e.code; capSay(code==='rate_limited'?'Too many requests just now. Wait a minute and try again.':code==='bad_key'||code==='network'?e.message:'Could not write this version'+(e&&e.message?': '+e.message:'.'),'warn'); }
+  finally{ capBusy=false; $('capRegen').disabled=false; }
+}
+$('capLangs').addEventListener('click',e=>{ const b=e.target.closest('[data-cl]'); if(b) pickCapLang(b.dataset.cl,false); });
+$('capRegen').onclick=()=>pickCapLang(state.capLang||state.lang,true);
+
 /* ---------- AI design ideas ---------- */
 let ideaSeen=[];
-function ideaState(d){ const t=THEMES[d.theme]||THEMES.parco; return {...state,template:d.template,look:d.look||'auto',theme:d.theme,colors:{ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper},fonts:{head:d.head||state.fonts.head,body:d.body||state.fonts.body},footStyle:d.foot||'auto',offsets:{}}; }
+/* AI-placed decorations and tags: normalised 0–1 positions, validated against DECOS / DECO_COLORS / TB_PRESETS */
+const IDEA_MAX={decos:4,tags:2};
+const PRICE_RE=/₹|\brs(?:\b|\.|\d)|\binr\b|\boff\b|\boffers?\b|\bsale\b|\bprices?\b|\bpricing\b|discount|\bdeals?\b|\bcheap\b|buy\s*now|%/i;
+const normWords=s=>String(s||'').toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu,' ').trim().split(' ').filter(Boolean);
+const AI_ID=()=>'ai'+Math.random().toString(36).slice(2,7);
+const clamp=(v,a,b,d)=>{ v=+v; return Number.isFinite(v)?Math.max(a,Math.min(b,v)):d; };
+function tagAllowed(text,src){ if(!text||PRICE_RE.test(text)) return false; if(/ready[\s-]*stock/i.test(text)&&!/ready[\s-]*stock/i.test(src)) return false;
+  const have=new Set(normWords(src)), words=normWords(text); return words.length>0&&words.every(w=>have.has(w)||have.has(w.replace(/s$/,''))||have.has(w+'s')); }
+function cleanIdeaExtras(d,src){
+  const decos=(Array.isArray(d.decos)?d.decos:[]).filter(x=>x&&DECOS[x.type]).slice(0,IDEA_MAX.decos).map(x=>{ const w=clamp(x.w,0.05,0.6,0.2);
+    return {id:AI_ID(),type:x.type,color:DECO_COLORS[x.color]?x.color:'pop',x:clamp(x.x,0,1,0.5),y:clamp(x.y,0,x.back===true?1:0.82,0.5),w,rot:Math.round(clamp(x.rot,-45,45,0)),back:x.back===true}; });
+  const tags=(Array.isArray(d.tags)?d.tags:[]).filter(x=>x&&typeof x.text==='string').map(x=>({id:AI_ID(),text:x.text.replace(/\s+/g,' ').trim().slice(0,40),preset:TB_PRESETS[x.preset]?x.preset:'pill',x:clamp(x.x,0.3,0.7,0.5),y:clamp(x.y,0.03,0.82,0.08)}))
+    .filter(x=>tagAllowed(x.text,src)).slice(0,IDEA_MAX.tags);
+  return {decos,tags};
+}
+function ideaDecosFor(d,fmt){ const f=FORMATS[fmt], k=f.w/1080; return (d.decos||[]).map(x=>{ const D=DECOS[x.type], w=Math.round(x.w*f.w), h=Math.round(w*D.h/D.w);
+  return {id:x.id,type:x.type,x:Math.round(Math.max(0,Math.min(f.w-w,x.x*f.w-w/2))),y:Math.round(Math.max(0,Math.min(f.h-h,x.y*f.h-h/2))),w,h,color:x.color,op:1,rot:x.rot||0,k:1,n:1,back:!!x.back,ai:true}; }); }
+function ideaTexts(d){ return (d.tags||[]).map(x=>({id:x.id,...TB_PRESETS[x.preset],text:x.text,align:'center',x:x.x,y:x.y,op:1,ai:true})); }
+// user-added items stay; earlier AI items for that template are replaced by this idea's
+function ideaAddons(d){ const keep=a=>(a||[]).filter(x=>!x.ai), decos={...state.decos}, texts={...state.texts}, cur=(state.decos&&state.decos[d.template])||{};
+  decos[d.template]={...cur}; Object.keys(FORMATS).forEach(fmt=>{ decos[d.template][fmt]=keep(cur[fmt]).concat(ideaDecosFor(d,fmt)); });
+  texts[d.template]=keep(state.texts&&state.texts[d.template]).concat(ideaTexts(d)); return {decos,texts}; }
+function ideaState(d){ const t=THEMES[d.theme]||THEMES.parco; return {...state,template:d.template,look:d.look||'auto',theme:d.theme,colors:{ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper},fonts:{head:d.head||state.fonts.head,body:d.body||state.fonts.body},footStyle:d.foot||'auto',offsets:{},...ideaAddons(d)}; }
 function localIdeas(n){ const fit=Object.keys(TEMPLATES).filter(k=>TEMPLATES[k].n===Math.max(1,Math.min(4,state.photos.length||1))&&k!==state.template); const looks=['classic','night','site'], th=Object.keys(THEMES), heads=['Barlow Condensed','Oswald','Teko','Bebas Neue','Saira Condensed','Anton','Rajdhani','Fjalla One'];
   const out=[]; let i=ideaSeen.length; while(out.length<n){ const t=fit.length?fit[i%fit.length]:state.template; out.push({template:t,look:looks[(i+1)%3],theme:th[(i*2)%th.length],head:heads[i%heads.length],body:'Barlow',foot:'auto',name:TEMPLATES[t].name+' · '+LOOKS[looks[(i+1)%3]].name,why:'A fresh mix of layout, colours and type for the same post.'}); i++; } return out; }
 async function getIdeas(){
   const n=Math.max(1,Math.min(4,state.photos.length||1)); const opts=Object.entries(TEMPLATES).filter(([k,t])=>t.n===n).map(([k,t])=>`${k}: ${t.name} — ${t.note}`).join('\n');
-  const sample=await cap.sample; if(!sample) return {list:localIdeas(3),ai:false};
+  const sample=await cap.sample; if(!sample) return {list:localIdeas(3),ai:false,err:'no_key'};
   const prompt=`You are a senior social media designer for PARCO Engineering Corporation (industrial spare parts, India). Using what you know about current Pinterest, Instagram and Behance trends for B2B industrial product posts, pick 3 clearly different designs for this post.
 Product: ${state.product||state.text.headline}
 Write-up: ${state.writeup.slice(0,600)}
@@ -2302,33 +2471,40 @@ Colour themes: ${Object.entries(THEMES).map(([k,t])=>k+' ('+t.name+')').join(', 
 Headline fonts: ${FONTS_ALL.join(', ')}
 Contact styles: band, plain, navy, dark, light
 Avoid repeating these already shown: ${ideaSeen.map(d=>d.template+'/'+d.look+'/'+d.theme).join('; ')||'none'}
-Return only JSON: {"ideas":[{"name":"short catchy name","template":"key","look":"classic|night|site","theme":"key","head":"font","body":"font","foot":"style","why":"one sentence on why this suits the product"}]} with exactly 3 ideas that differ in template or look.`;
-  try{ const r=await sample.json(prompt,{modelTier:'default',cache:false}); let list=(r&&r.ideas)||[];
-    list=list.filter(d=>d&&TEMPLATES[d.template]).map(d=>({...d,look:LOOKS[d.look]?d.look:'classic',theme:THEMES[d.theme]?d.theme:'parco',head:FONTS_ALL.includes(d.head)?d.head:'Barlow Condensed',body:FONTS_ALL.includes(d.body)?d.body:'Barlow',foot:['band','plain','navy','dark','light'].includes(d.foot)?d.foot:'auto'}));
+Decorations (optional, up to ${IDEA_MAX.decos} per idea; use the key): ${Object.entries(DECOS).map(([k,d])=>k+' ('+d.n+')').join(', ')}
+Decoration colours: ${Object.keys(DECO_COLORS).join(', ')}
+Tags (optional, up to ${IDEA_MAX.tags} per idea) are short text labels. Tag styles: ${Object.keys(TB_PRESETS).join(', ')}
+Tag rules: copy the words from the write-up or product name (a brand, part number, machine name or stock line). Never mention prices, discounts, offers, sale or "buy now". Use "Ready stock" only if the write-up says ready stock.
+Positions are fractions of the post (0 to 1, top left is 0,0). For decorations x,y is the centre, w is the width as a fraction of the post width (0.05 to 0.6), rot is degrees (-45 to 45), back true puts it behind the photos and text. For tags x is the centre and y is the top edge. Keep everything clear of the product photo centre, the headline and the contact footer (y above 0.82).
+Return only JSON: {"ideas":[{"name":"short catchy name","template":"key","look":"classic|night|site","theme":"key","head":"font","body":"font","foot":"style","why":"one sentence on why this suits the product","decos":[{"type":"key","color":"key","x":0.85,"y":0.15,"w":0.18,"rot":0,"back":false}],"tags":[{"text":"words from the write-up","preset":"pill","x":0.5,"y":0.08}]}]} with exactly 3 ideas that differ in template or look.`;
+  try{ const o={modelTier:'default',cache:false}; try{ const ims=[]; for(let i=0;i<Math.min(2,state.photos.length);i++) ims.push(await photoBlob(state.photos[i],512,'image/jpeg')); if(ims.length) o.images=ims; }catch{}
+    let r; try{ r=await sample.json(prompt,o); }catch(e){ if(o.images&&e&&['images_unavailable','image_rejected','prompt_too_large'].includes(e.code)){ delete o.images; r=await sample.json(prompt,o); } else throw e; }
+    let list=(r&&r.ideas)||[];
+    list=list.filter(d=>d&&TEMPLATES[d.template]).map(d=>({...d,look:LOOKS[d.look]?d.look:'classic',theme:THEMES[d.theme]?d.theme:'parco',head:FONTS_ALL.includes(d.head)?d.head:'Barlow Condensed',body:FONTS_ALL.includes(d.body)?d.body:'Barlow',foot:['band','plain','navy','dark','light'].includes(d.foot)?d.foot:'auto',...cleanIdeaExtras(d,state.product+' '+state.writeup)}));
     if(list.length<3) list=list.concat(localIdeas(3-list.length)); return {list:list.slice(0,3),ai:true}; }
   catch(e){ return {list:localIdeas(3),ai:false,err:e&&e.code}; }
 }
 async function showIdeas(){
   const grid=$('ideasGrid'); grid.innerHTML=[0,1,2].map(()=>'<div class="idea"><div class="sk"></div><small>Designing…</small></div>').join(''); $('ideasModal').hidden=false; $('ideasMore').disabled=true;
   const {list,ai,err}=await getIdeas(); ideaSeen=ideaSeen.concat(list);
-  $('ideasNote').textContent=ai?'Three different designs with the same photos and write-up, picked by AI. Pick one to use it; your text stays the same.':(err==='not_granted'?'AI was not allowed, so these are three quick alternatives.':'Three quick alternatives with the same photos and write-up.');
+  $('ideasNote').textContent=ai?'Three different designs with the same photos and write-up, picked by AI. Pick one to use it; your text stays the same.':(err==='no_key'?'AI is off. Tap ✦ AI settings and add your key to get designs picked by AI. These are three quick alternatives.':err==='bad_key'?'The AI key was not accepted (check ✦ AI settings), so these are three quick alternatives.':err==='rate_limited'?'The AI is busy right now, so these are three quick alternatives.':'Three quick alternatives with the same photos and write-up.');
   const fonts=new Set(); list.forEach(d=>{ fonts.add(d.head); fonts.add(d.body); }); await Promise.all([...fonts].map(loadFont));
   grid.innerHTML=''; list.forEach(d=>{ const card=document.createElement('div'); card.className='idea'; const cv2=document.createElement('canvas'); const f=FORMATS[state.format], tw=420, sc=tw/f.w; cv2.width=tw; cv2.height=Math.round(f.h*sc); const x=cv2.getContext('2d'); x.setTransform(sc,0,0,sc,0,0); renderPost(x,f.w,f.h,ideaState(d),false);
-    const b=document.createElement('b'); b.textContent=d.name||TEMPLATES[d.template].name; const sm=document.createElement('small'); sm.textContent=(d.why||'')+` (${TEMPLATES[d.template].name}, ${LOOKS[d.look].name} look, ${d.head})`;
+    const b=document.createElement('b'); b.textContent=d.name||TEMPLATES[d.template].name; const sm=document.createElement('small'); const extras=[d.decos&&d.decos.length?d.decos.length+' decoration'+(d.decos.length>1?'s':''):'',d.tags&&d.tags.length?d.tags.length+' tag'+(d.tags.length>1?'s':''):''].filter(Boolean).join(', '); sm.textContent=(d.why||'')+` (${TEMPLATES[d.template].name}, ${LOOKS[d.look].name} look, ${d.head}${extras?', '+extras:''})`;
     const btn=document.createElement('button'); btn.type='button'; btn.className='btn primary'; btn.textContent='Use this design';
-    btn.onclick=()=>{ pushUndoAll(); const ns=ideaState(d); Object.assign(state,{template:ns.template,look:ns.look,theme:ns.theme,colors:ns.colors,fonts:ns.fonts,footStyle:ns.footStyle}); SEL=null; updSel(); syncUI(); render(); $('ideasModal').hidden=true; toast('Design applied. Undo brings back the previous one.'); };
+    btn.onclick=()=>{ pushUndoAll(); const ns=ideaState(d); Object.assign(state,{template:ns.template,look:ns.look,theme:ns.theme,colors:ns.colors,fonts:ns.fonts,footStyle:ns.footStyle,decos:ns.decos,texts:ns.texts}); SEL=null; updSel(); syncUI(); render(); $('ideasModal').hidden=true; toast('Design applied. Undo brings back the previous one.'); };
     card.append(cv2,b,sm,btn); grid.append(card); });
   $('ideasMore').disabled=false;
 }
 let STYLE_UNDO=[];
-function pushUndoAll(){ STYLE_UNDO.push(JSON.stringify({template:state.template,look:state.look,theme:state.theme,colors:state.colors,fonts:state.fonts,footStyle:state.footStyle})); UNDO.push('__style__'); REDO=[]; updUndo(); }
+function pushUndoAll(){ STYLE_UNDO.push(JSON.stringify({template:state.template,look:state.look,theme:state.theme,colors:state.colors,fonts:state.fonts,footStyle:state.footStyle,decos:state.decos||{},texts:state.texts||{}})); UNDO.push('__style__'); REDO=[]; updUndo(); }
 $('ideasBtn').onclick=()=>{ ideaSeen=[]; showIdeas(); }; $('ideasMore').onclick=showIdeas; $('ideasClose').onclick=()=>{ $('ideasModal').hidden=true; };
 
 /* ---------- new post ---------- */
 $('newPost').onclick=()=>{
   const o=state; const n=exampleState();
   Object.assign(n,{footStyle:o.footStyle,look:o.look,sizes:{...o.sizes},fonts:{...o.fonts},format:o.format,template:o.template,theme:o.theme,colors:{...o.colors},show:{...o.show},wm:{...o.wm},wa:{...o.wa},lang:o.lang,tone:o.tone,textScale:o.textScale,brandLogo:o.brandLogo,brandImg:o.brandImg,bgPhoto:o.bgPhoto,
-    product:'',writeup:'',caption:'',hashtags:DEFAULT_TAGS,waText:'',photos:[],offsets:{},decos:{},extra:{},texts:{},specs:[{k:'Brand',v:''},{k:'Part No.',v:''},{k:'Application',v:''}],badges:o.badges.map(b=>({...b}))});
+    product:'',writeup:'',caption:'',hashtags:DEFAULT_TAGS,waText:'',photos:[],offsets:{},decos:{},extra:{},texts:{},captions:{},capLang:'',scheduledAt:null,draft:false,specs:[{k:'Brand',v:''},{k:'Part No.',v:''},{k:'Application',v:''}],badges:o.badges.map(b=>({...b}))});
   const keep=['since','values','sidetag','tagline','phones','whatsapp','email','web','address','cta','category','compat'];
   n.text={eyebrow:'',headline:'',sub:'',bullets:[]}; keep.forEach(k=>n.text[k]=o.text[k]);
   state=n; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); $('t-write').click(); $('product').focus();
@@ -2368,7 +2544,7 @@ function renderLib(){
   posts.forEach(p=>{ const card=document.createElement('article'); card.className='card'; const d=new Date(p.updatedAt||0);
     card.innerHTML=`<div class="th">${p.thumb?'<img alt="">':''}</div><div class="meta"><b></b><span></span></div><div class="ops"><button type="button" class="btn sm primary" data-open>Open</button><button type="button" class="btn sm" data-copy>Make a copy</button><button type="button" class="btn sm danger" data-rm>Delete</button></div>`;
     if(p.thumb) card.querySelector('img').src=p.thumb; card.querySelector('b').textContent=p.title||'Untitled post';
-    card.querySelector('.meta span').textContent=`${TEMPLATES[p.template]?.name||''} · ${FORMATS[p.format]?.label||''} · ${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
+    card.querySelector('.meta span').textContent=(p.scheduledAt?`📅 ${new Date(p.scheduledAt+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}${p.draft?' · Draft':''} · `:'')+`${TEMPLATES[p.template]?.name||''} · ${FORMATS[p.format]?.label||''} · ${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
     card.querySelector('[data-open]').onclick=()=>openPost(p,false); card.querySelector('[data-copy]').onclick=()=>openPost(p,true);
     const rm=card.querySelector('[data-rm]'); let armed=0;
     rm.onclick=async()=>{ if(!armed){ rm.textContent='Tap again to delete'; armed=setTimeout(()=>{ armed=0; rm.textContent='Delete'; },4000); return; }
@@ -2379,7 +2555,7 @@ function renderLib(){
 async function restorePhoto(ph){ if(!ph) return null; const src=ph.sampleKey?ASSETS.photos[ph.sampleKey]?.src:(ph.assetId?await LOCAL.assets.urlFor(ph.assetId):null); if(!src) return null; return await makePhoto({...ph,src}); }
 async function openPost(p,asCopy){
   const n=exampleState();
-  const merged={...n,...p,offsets:JSON.parse(JSON.stringify(p.offsets||{})),decos:JSON.parse(JSON.stringify(p.decos||{})),texts:JSON.parse(JSON.stringify(p.texts||{})),extra:JSON.parse(JSON.stringify(p.extra||{})),sizes:{...n.sizes,...(p.sizes||{})},fonts:{...n.fonts,...(p.fonts||{})},colors:{...n.colors,...(p.colors||{})},show:{...n.show,...(p.show||{})},wm:{...n.wm,...(p.wm||{})},wa:{...n.wa,...(p.wa||{})},text:{...n.text,...(p.text||{})},
+  const merged={...n,...p,offsets:JSON.parse(JSON.stringify(p.offsets||{})),decos:JSON.parse(JSON.stringify(p.decos||{})),texts:JSON.parse(JSON.stringify(p.texts||{})),extra:JSON.parse(JSON.stringify(p.extra||{})),captions:JSON.parse(JSON.stringify(p.captions||{})),sizes:{...n.sizes,...(p.sizes||{})},fonts:{...n.fonts,...(p.fonts||{})},colors:{...n.colors,...(p.colors||{})},show:{...n.show,...(p.show||{})},wm:{...n.wm,...(p.wm||{})},wa:{...n.wa,...(p.wa||{})},text:{...n.text,...(p.text||{})},
     specs:Array.isArray(p.specs)?p.specs.map(x=>({...x})):n.specs, badges:Array.isArray(p.badges)?p.badges.map(x=>({...x})):n.badges, photos:[],bgPhoto:null,brandImg:null,active:0,libId:asCopy?null:p.id};
   if(!TEMPLATES[merged.template]) merged.template='showcase'; delete merged.id; delete merged.thumb; delete merged.updatedAt; delete merged.title;
   let missing=0;
@@ -2387,7 +2563,7 @@ async function openPost(p,asCopy){
   try{ merged.bgPhoto=await restorePhoto(p.bgPhoto); }catch{ missing++; }
   try{ merged.brandImg=await restorePhoto(p.brandImg); }catch{ missing++; }
   if(merged.brandLogo==='custom'&&!merged.brandImg) merged.brandLogo='none';
-  state=merged; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); (async()=>{ const fs=new Set([state.fonts.head,state.fonts.body]); JSON.stringify(state.offsets||{}).replace(/"font":"([^"]+)"/g,(m0,f)=>{ fs.add(f); return m0; }); for(const f of fs) await loadFont(f); render(); })();
+  state=merged; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); (async()=>{ const fs=new Set([state.fonts.head,state.fonts.body]); JSON.stringify(state.offsets||{}).replace(/"font":"([^"]+)"/g,(m0,f)=>{ fs.add(f); return m0; }); for(const f of fs) await loadFont(f); await scriptFonts(); render(); })();
   window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   toast((asCopy?'Copy opened — save it as a new post':'Post opened')+(missing?` · ${missing} image(s) could not be loaded`:''));
 }
@@ -2398,20 +2574,124 @@ async function serPhoto(p,png){
   return {...base,assetId:p.assetId,png:!!(png||p.png)};
 }
 function makeThumb(){ const f=FORMATS[state.format], tw=260, sc=tw/f.w; const c=document.createElement('canvas'); c.width=tw; c.height=Math.round(f.h*sc); const x=c.getContext('2d'); x.setTransform(sc,0,0,sc,0,0); renderPost(x,f.w,f.h,state,false); return c.toDataURL('image/jpeg',0.72); }
+// saves the current state (new or update); returns how many images could not be stored
+async function saveCurrent(extra){
+  let skipped=0; const photos=[];
+  for(const p of state.photos){ try{ photos.push(await serPhoto(p)); }catch{ skipped++; } }
+  let bg=null, br=null; try{ bg=await serPhoto(state.bgPhoto); }catch{ skipped++; } try{ br=await serPhoto(state.brandImg,true); }catch{ skipped++; }
+  keepCap(); const doc={title:state.text.headline||'Untitled post',updatedAt:Date.now(),format:state.format,template:state.template,theme:state.theme,colors:{...state.colors},show:{...state.show},wm:{...state.wm},wa:{...state.wa},offsets:JSON.parse(JSON.stringify(state.offsets||{})),decos:JSON.parse(JSON.stringify(state.decos||{})),texts:JSON.parse(JSON.stringify(state.texts||{})),extra:JSON.parse(JSON.stringify(state.extra||{})),
+    brandLogo:state.brandLogo,textScale:state.textScale,look:state.look,footStyle:state.footStyle||'auto',sizes:{...state.sizes},fonts:{...state.fonts},product:state.product,writeup:state.writeup,lang:state.lang,tone:state.tone,text:{...state.text,bullets:bulletsList()},
+    specs:specList().map(r=>({k:r.k||'',v:r.v||''})),badges:state.badges.map(b=>({icon:b.icon,label:b.label||''})),caption:state.caption,hashtags:state.hashtags,waText:state.waText,captions:JSON.parse(JSON.stringify(state.captions||{})),capLang:state.capLang||'',
+    photos,bgPhoto:bg,brandImg:br,thumb:makeThumb(),scheduledAt:state.scheduledAt||null,draft:false,...(extra||{})};
+  if(state.libId) await db.collection('posts').doc(state.libId).set(doc); else { const ref=await db.collection('posts').add(doc); state.libId=ref.id; }
+  return skipped;
+}
 $('save').onclick=async()=>{
   if(!db) return; const btn=$('save'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Saving';
-  try{ let skipped=0; const photos=[];
-    for(const p of state.photos){ try{ photos.push(await serPhoto(p)); }catch{ skipped++; } }
-    let bg=null, br=null; try{ bg=await serPhoto(state.bgPhoto); }catch{ skipped++; } try{ br=await serPhoto(state.brandImg,true); }catch{ skipped++; }
-    const doc={title:state.text.headline||'Untitled post',updatedAt:Date.now(),format:state.format,template:state.template,theme:state.theme,colors:{...state.colors},show:{...state.show},wm:{...state.wm},wa:{...state.wa},offsets:JSON.parse(JSON.stringify(state.offsets||{})),decos:JSON.parse(JSON.stringify(state.decos||{})),texts:JSON.parse(JSON.stringify(state.texts||{})),extra:JSON.parse(JSON.stringify(state.extra||{})),
-      brandLogo:state.brandLogo,textScale:state.textScale,look:state.look,footStyle:state.footStyle||'auto',sizes:{...state.sizes},fonts:{...state.fonts},product:state.product,writeup:state.writeup,lang:state.lang,tone:state.tone,text:{...state.text,bullets:bulletsList()},
-      specs:specList().map(r=>({k:r.k||'',v:r.v||''})),badges:state.badges.map(b=>({icon:b.icon,label:b.label||''})),caption:state.caption,hashtags:state.hashtags,waText:state.waText,
-      photos,bgPhoto:bg,brandImg:br,thumb:makeThumb()};
-    if(state.libId) await db.collection('posts').doc(state.libId).set(doc); else { const ref=await db.collection('posts').add(doc); state.libId=ref.id; }
+  try{ const skipped=await saveCurrent();
     toast(skipped?`Saved. ${skipped} image(s) could not be stored; add them again before downloading later.`:'Saved to library');
   }catch(e){ toast('Could not save: '+((e&&e.message)||'try again')); }
   finally{ btn.disabled=false; btn.textContent=state.libId?'Update saved post':'Save to library'; updateEditing(); }
 };
+
+/* ---------- week of posts (content calendar): plan with one AI call, captions one post at a time, no auto-posting ---------- */
+const WEEK_ANGLES=['stock','fitment','brand story','dealer enquiry','new range'], WEEK_TPLS=Object.keys(TEMPLATES).filter(k=>TEMPLATES[k].n===1);
+const WEEK_PACE={gap:3000,wait:20000}; // pause between caption calls, and after a rate-limit reply
+let WK=null; // {lang,tone,entries:[{date,product,writeup,angle,template,text,specs,photo,sample,caption,hashtags,whatsapp,libId}]}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const STOCK_RE=/ready[\s-]*stock|in stock/i;
+const noPrice=(s,src)=>{ s=typeof s==='string'?s.trim():''; return PRICE_RE.test(s)||(src!==undefined&&STOCK_RE.test(s)&&!STOCK_RE.test(src))?'':s; };
+function parseProducts(t){ return String(t||'').split('\n').map(l=>l.trim()).filter(Boolean).slice(0,12).map(l=>{ const m=l.match(/^(.+?)\s*(?::|\s[-–—]\s)\s*(.+)$/); return m?{name:m[1].trim(),writeup:m[2].trim()}:{name:l,writeup:l}; }); }
+function isoDay(d){ return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); }
+function addDays(iso,n){ const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return isoDay(d); }
+const dayName=iso=>new Date(iso+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+// a real photo whose name matches the product, else a sample photo (flagged)
+function weekPhoto(name,i){ const stem=w=>w.replace(/s$/,''), words=normWords(name).filter(w=>w.length>2).map(stem), hit=lbl=>{ const L=normWords(lbl).map(stem); return words.filter(w=>L.includes(w)).length; };
+  const own=state.photos.filter(p=>!p.sampleKey&&hit(p.label)>0).sort((a,b)=>hit(b.label)-hit(a.label))[0]; if(own) return {photo:own,sample:false};
+  const keys=Object.keys(ASSETS.photos), need=Math.min(2,words.length), named=keys.filter(k=>hit(ASSETS.photos[k].label)>=need).sort((a,b)=>hit(ASSETS.photos[b].label)-hit(ASSETS.photos[a].label))[0];
+  const k=named||SAMPLE_FILL[i%SAMPLE_FILL.length]; return {photo:SAMPLE_PH.find(p=>p.sampleKey===k)||null,sampleKey:k,sample:true}; }
+function weekPrompt(prods,n,start,lang,tone){
+  return `You plan a week of social media posts for PARCO Engineering Corporation, Ahmedabad (since 1971), an importer and distributor of spare parts for heavy earthmoving equipment, transit mixers, concrete pumps and industrial DG sets. Buyers are contractors, equipment owners, dealers and mechanics across India.
+Rules:
+- Enquiry-only marketing: never mention prices, discounts, offers or "buy now". Drive WhatsApp enquiries.
+- Use only facts from each product's write-up. Never invent specifications, part numbers or stock claims.
+- Angles: ${WEEK_ANGLES.join(', ')}. Use "stock" only if that product's write-up mentions stock, and "new range" only if it says the product is new. Vary angles and spread the products across the week.
+- Language: ${lang}. ${LANG_NOTE[lang]||''} Keep part names, brand names, machine names and part numbers in English.
+- Tone: ${tone}.
+Products (name: write-up):
+${prods.map((p,i)=>`${i+1}. ${p.name}: ${p.writeup}`).join('\n')}
+Plan ${n} posts, one per day, day 1 is ${start}.
+Templates (use the key): ${WEEK_TPLS.map(k=>`${k} (${TEMPLATES[k].note})`).join('; ')}
+Return only JSON: {"posts":[{"day":1,"product":"product name exactly as listed","angle":"one of the angles","template":"key","eyebrow":"at most 18 characters","headline":"at most 22 characters","subhead":"at most 40 characters","category":"at most 26 characters","compat":"machine brands from the write-up separated by \\" | \\", or \\"\\"","cta":"at most 22 characters","bullets":["up to 3 lines of at most 34 characters"],"specs":[{"label":"","value":""}]}]} with exactly ${n} posts.`; }
+function cleanWeek(r,prods,n,start){ const byName=new Map(prods.map(p=>[p.name.toLowerCase(),p])); let i=0;
+  return (Array.isArray(r&&r.posts)?r.posts:[]).filter(x=>x&&byName.has(String(x.product||'').trim().toLowerCase())).sort((a,b)=>(+a.day||0)-(+b.day||0)).slice(0,n).map(x=>{ const p=byName.get(String(x.product).trim().toLowerCase()), ph=weekPhoto(p.name,i), k=i++;
+    return {date:addDays(start,k),product:p.name,writeup:p.writeup,angle:WEEK_ANGLES.includes(x.angle)?x.angle:'fitment',template:WEEK_TPLS.includes(x.template)?x.template:WEEK_TPLS[k%WEEK_TPLS.length],
+      text:{eyebrow:noPrice(x.eyebrow,p.writeup),headline:noPrice(x.headline,p.writeup)||p.name.slice(0,22),sub:noPrice(x.subhead,p.writeup),category:noPrice(x.category,p.writeup),compat:noPrice(x.compat),cta:noPrice(x.cta,p.writeup)||'Enquire on WhatsApp',bullets:(Array.isArray(x.bullets)?x.bullets:[]).map(t=>noPrice(t,p.writeup)).filter(Boolean).slice(0,3)},
+      specs:(Array.isArray(x.specs)?x.specs:[]).slice(0,4).map(s=>({k:noPrice(s&&s.label),v:noPrice(s&&s.value)})).filter(s=>s.k&&s.v),...ph,caption:'',hashtags:'',whatsapp:'',libId:null}; }); }
+// a full post state for one calendar entry; brand, look and contact details come from the current post
+function weekState(e){ const o=state, n=exampleState(), stock=STOCK_RE.test(e.writeup);
+  Object.assign(n,{format:o.format,template:e.template,look:o.look,theme:o.theme,colors:{...o.colors},fonts:{...o.fonts},footStyle:o.footStyle,show:{...o.show},wm:{...o.wm},wa:{...o.wa},sizes:{...o.sizes},textScale:o.textScale,brandLogo:o.brandLogo,brandImg:o.brandImg,
+    product:e.product,writeup:e.writeup,lang:WK.lang,tone:WK.tone,photos:e.photo?[e.photo]:[],specs:e.specs.map(s=>({...s})),badges:o.badges.filter(b=>stock||!/stock/i.test(b.label||'')).map(b=>({...b})),
+    caption:e.caption,hashtags:e.hashtags||DEFAULT_TAGS,waText:e.whatsapp,capLang:WK.lang,captions:e.caption?{[WK.lang]:{caption:e.caption,hashtags:e.hashtags,whatsapp:e.whatsapp,src:e.product+'|'+e.writeup}}:{},libId:e.libId,scheduledAt:e.date});
+  n.text={...o.text,...e.text,bullets:[...e.text.bullets]}; return n; }
+function renderBlob(st,fmt){ const f=FORMATS[fmt], c=document.createElement('canvas'); c.width=f.w; c.height=f.h; renderPost(c.getContext('2d'),f.w,f.h,{...st,format:fmt},false); return new Promise(r=>c.toBlob(r,'image/png')); }
+function wkSay(m,cls){ const el=$('wkMsg'); el.className='status'+(cls&&cls!=='busy'?' '+cls:''); el.innerHTML=''; if(cls==='busy'){ el.innerHTML='<span class="spin"></span> '; el.append(m); } else el.textContent=m; }
+function paintWeek(){ const box=$('wkCal'); box.innerHTML=''; $('wkActs').hidden=!(WK&&WK.entries.length); if(!WK) return;
+  WK.entries.forEach((e,i)=>{ const row=document.createElement('div'); row.className='wk-row'+(e.sample?' wk-sample':''); const cv2=document.createElement('canvas'), f=FORMATS.square, tw=150, sc=tw/f.w; cv2.width=tw; cv2.height=tw; const x=cv2.getContext('2d'); x.setTransform(sc,0,0,sc,0,0); renderPost(x,f.w,f.h,{...weekState(e),format:'square'},false);
+    row.innerHTML=`<div class="wk-info"><b>${esc(dayName(e.date))} · ${esc(e.product)}</b><span class="wk-chip">${esc(e.angle)}</span><span class="wk-chip">${esc(TEMPLATES[e.template].name)}</span><small>${esc(e.text.headline)}${e.text.sub?' · '+esc(e.text.sub):''}</small>${e.sample?'<small class="wk-flag">Sample photo used: add the real product photo</small>':''}<small>${e.caption?'Caption written':'Caption not written yet'}${e.libId?' · Saved as draft':''}</small><div class="wk-ops"><label class="btn sm" for="wkPh${i}">${e.sample?'Add photo':'Change photo'}</label><input type="file" id="wkPh${i}" class="vis-hide" accept="image/*" data-wkph="${i}"><button type="button" class="btn sm" data-wkcap="${i}">${e.caption?'Write caption again':'Write caption'}</button></div></div>`;
+    row.prepend(cv2); box.append(row); }); }
+async function weekCaption(e){ const sample=await cap.sample; if(!sample) throw Object.assign(new Error('AI is off. Tap ✦ AI settings and add your key.'),{code:'no_key'});
+  const r=await sample.json(capPrompt(WK.lang,false,weekState(e)),{modelTier:'default',cache:false}); const str=v=>typeof v==='string'?v.trim():'';
+  if(!r||!str(r.caption)) throw Object.assign(new Error('The AI reply had no caption.'),{code:'bad_response'});
+  e.caption=str(r.caption); e.hashtags=str(r.hashtags)||DEFAULT_TAGS; e.whatsapp=str(r.whatsapp);
+  if(e.libId) await LOCAL.db.collection('posts').doc(e.libId).update({caption:e.caption,hashtags:e.hashtags,waText:e.whatsapp,capLang:WK.lang,captions:{[WK.lang]:{caption:e.caption,hashtags:e.hashtags,whatsapp:e.whatsapp,src:e.product+'|'+e.writeup}},updatedAt:Date.now()}); }
+async function weekCaptions(list){ let n=0; const todo=list.filter(e=>!e.caption);
+  for(const e of todo){ if(n++) await sleep(WEEK_PACE.gap); wkSay(`Writing caption ${n} of ${todo.length} (${e.product})…`,'busy');
+    try{ await weekCaption(e); }catch(err){ if(err&&err.code==='rate_limited'){ wkSay(`The AI is busy; waiting ${Math.round(WEEK_PACE.wait/1000)} seconds…`,'busy'); await sleep(WEEK_PACE.wait); await weekCaption(e); } else throw err; }
+    paintWeek(); } return todo.length; }
+let wkBusy=false;
+async function wkRun(fn){ if(wkBusy) return; wkBusy=true; document.querySelectorAll('#weekModal button').forEach(b=>{ if(b.id!=='wkClose') b.disabled=true; });
+  try{ await fn(); }catch(e){ const code=e&&e.code; wkSay(code==='rate_limited'?'Too many requests just now. Wait a minute and try again; finished posts are kept.':(e&&e.message)||'Something went wrong. Try again.','warn'); }
+  finally{ wkBusy=false; document.querySelectorAll('#weekModal button').forEach(b=>b.disabled=false); } }
+async function saveWeekDrafts(){ const keep=state; let skipped=0;
+  try{ for(let i=0;i<WK.entries.length;i++){ const e=WK.entries[i]; wkSay(`Saving draft ${i+1} of ${WK.entries.length}…`,'busy'); state=S=weekState(e); skipped+=await saveCurrent({scheduledAt:e.date,draft:true}); e.libId=state.libId; } }
+  finally{ state=S=keep; render(); } paintWeek(); return skipped; }
+// minimal ZIP (stored, no compression) so the export is one file
+const CRC_T=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(u){ let c=0xFFFFFFFF; for(let i=0;i<u.length;i++) c=CRC_T[(c^u[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+async function makeZip(files){ const enc=new TextEncoder(), parts=[], central=[]; let off=0;
+  for(const f of files){ const data=new Uint8Array(await f.blob.arrayBuffer()), name=enc.encode(f.name), crc=crc32(data), h=new DataView(new ArrayBuffer(30)), c=new DataView(new ArrayBuffer(46));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(12,0x21,true); h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,name.length,true);
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(14,0x21,true); c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,name.length,true); c.setUint32(42,off,true);
+    parts.push(h,name,data); central.push(c,name); off+=30+name.length+data.length; }
+  const size=central.reduce((s,x)=>s+x.byteLength,0), e=new DataView(new ArrayBuffer(22)); e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,size,true); e.setUint32(16,off,true);
+  return new Blob([...parts,...central,e],{type:'application/zip'}); }
+const csvCell=v=>{ v=String(v??''); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+async function exportWeek(){ const files=[], rows=[['date','day','product','angle','template','headline','caption','hashtags','whatsapp','sample_photo','files']];
+  for(let i=0;i<WK.entries.length;i++){ const e=WK.entries[i], st=weekState(e), base=`${e.date}-${slug(e.product)}`; wkSay(`Drawing post ${i+1} of ${WK.entries.length}…`,'busy'); await scriptFonts(st);
+    for(const fmt of Object.keys(FORMATS)) files.push({name:`${base}-${fmt}.png`,blob:await renderBlob(st,fmt)});
+    rows.push([e.date,new Date(e.date+'T12:00:00').toLocaleDateString('en-IN',{weekday:'long'}),e.product,e.angle,TEMPLATES[e.template].name,e.text.headline,e.caption,e.hashtags,e.whatsapp,e.sample?'yes':'no',Object.keys(FORMATS).map(f=>`${base}-${f}.png`).join(' ')]); }
+  files.push({name:'captions.csv',blob:new Blob(['﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv'})});
+  await LOCAL.downloads.save({filename:`parco-week-${WK.entries[0].date}.zip`,data:await makeZip(files)}); }
+(function(){ const sel=$('wkTone'); sel.innerHTML=$('tone').innerHTML;
+  $('weekBtn').onclick=()=>{ if(!$('wkList').value.trim()&&(state.product||state.writeup)) $('wkList').value=`${state.product||state.text.headline}: ${state.writeup}`.trim();
+    if(!$('wkStart').value) $('wkStart').value=addDays(isoDay(new Date()),1); $('wkLang').value=state.lang; $('wkTone').value=state.tone; $('weekModal').hidden=false; paintWeek(); };
+  $('wkClose').onclick=()=>{ $('weekModal').hidden=true; };
+  $('wkPlan').onclick=()=>wkRun(async()=>{ const prods=parseProducts($('wkList').value); if(!prods.length){ wkSay('Paste at least one product, one per line.','warn'); return; }
+    const sample=await cap.sample; if(!sample){ wkSay('AI is off. Tap ✦ AI settings and add your key to plan a week.','warn'); return; }
+    const n=+$('wkN').value, start=$('wkStart').value||addDays(isoDay(new Date()),1), lang=$('wkLang').value, tone=$('wkTone').value; wkSay('Planning the week…','busy');
+    const r=await sample.json(weekPrompt(prods,n,start,lang,tone),{modelTier:'default',cache:false}); const entries=cleanWeek(r,prods,n,start);
+    for(const e of entries) if(!e.photo&&e.sampleKey){ const P=ASSETS.photos[e.sampleKey]; try{ e.photo=await makePhoto({src:P.src,label:P.label,sampleKey:e.sampleKey}); }catch{} }
+    if(!entries.length){ wkSay('The AI plan did not match the product list. Try again.','warn'); return; }
+    WK={lang,tone,entries}; paintWeek(); const s=entries.filter(e=>e.sample).length;
+    wkSay(`${entries.length} posts planned.${s?` ${s} use a sample photo (marked); add the real photo where you can.`:''} Captions are written one post at a time when you ask.`,s?'warn':'ok'); });
+  $('wkDrafts').onclick=()=>wkRun(async()=>{ const sk=await saveWeekDrafts(); wkSay(`Saved ${WK.entries.length} drafts to the library with their dates.${sk?` ${sk} image(s) could not be stored.`:''}`,'ok'); });
+  $('wkCaps').onclick=()=>wkRun(async()=>{ const n=await weekCaptions(WK.entries); wkSay(n?`Wrote ${n} caption${n>1?'s':''}.`:'All captions are written.','ok'); });
+  $('wkExport').onclick=()=>wkRun(async()=>{ const miss=WK.entries.filter(e=>!e.caption).length; if(miss) await weekCaptions(WK.entries); await exportWeek(); wkSay('Exported a ZIP with every post in 3 sizes and captions.csv. Nothing was posted.','ok'); });
+  $('wkCal').addEventListener('click',e=>{ const b=e.target.closest('[data-wkcap]'); if(!b) return; const en=WK.entries[+b.dataset.wkcap]; en.caption=''; wkRun(async()=>{ await weekCaptions([en]); wkSay(`Caption written for ${en.product}.`,'ok'); }); });
+  $('wkCal').addEventListener('change',async e=>{ const i=e.target.dataset.wkph; if(i===undefined) return; const f=e.target.files[0]; if(!f) return; const en=WK.entries[+i];
+    try{ en.photo=await makePhoto({src:URL.createObjectURL(f),label:en.product,png:f.type==='image/png'}); en.sample=false; delete en.sampleKey; if(en.libId){ const keep=state; try{ state=S=weekState(en); await saveCurrent({scheduledAt:en.date,draft:true}); } finally{ state=S=keep; render(); } } paintWeek(); }catch{ toast('That photo could not be opened.'); } });
+})();
 
 /* ---------- background removal ---------- */
 const ORT_URL='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgl.min.js', MODEL_URL='models/u2netp.txt', ORT_WASM='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.bundle.min.mjs', SIL_PARTS=['models/silueta.0.txt','models/silueta.1.txt','models/silueta.2.txt'];
@@ -2450,20 +2730,24 @@ function upsample(p,w,h){ // bilinear 320 -> w x h
     for(let x=0;x<w;x++){ const fx=Math.min(SZN-1,Math.max(0,(x+0.5)*sx-0.5)), x0=fx|0, x1=Math.min(SZN-1,x0+1), tx=fx-x0;
       out[y*w+x]=(p[y0*SZN+x0]*(1-tx)+p[y0*SZN+x1]*tx)*(1-ty)+(p[y1*SZN+x0]*(1-tx)+p[y1*SZN+x1]*tx)*ty; } } return out;
 }
+// AI probability that each pixel belongs to the product. src={w,h,data} is the pixels of canvas cv.
+async function aiProbability(src,cv,msg){
+  const sess=await getSession(msg); msg('Finding the product…');
+  const {w,h}=src;
+  const p1=upsample(await predict(sess,cv,0,0,w,h,false),w,h); let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(p1[y*w+x]>0.3){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  let prob=p1;
+  if(x1>=0){ const mw=(x1-x0)*0.15, mh=(y1-y0)*0.15; x0=Math.max(0,Math.floor(x0-mw)); y0=Math.max(0,Math.floor(y0-mh)); x1=Math.min(w,Math.ceil(x1+mw)); y1=Math.min(h,Math.ceil(y1+mh));
+    const cw=x1-x0, ch=y1-y0; msg('Refining the edges…');
+    const a=await predict(sess,cv,x0,y0,cw,ch,false), b=await predict(sess,cv,x0,y0,cw,ch,true); const avg=new Float32Array(SZN*SZN); for(let i=0;i<avg.length;i++) avg[i]=(a[i]+b[i])/2;
+    const p2=upsample(avg,cw,ch); prob=new Float32Array(w*h); for(let i=0;i<w*h;i++) prob[i]=p1[i];
+    for(let y=0;y<ch;y++) for(let x=0;x<cw;x++){ const i=(y+y0)*w+x+x0; prob[i]=Math.max(prob[i],p2[y*cw+x]); } }
+  return guided(src,prob);
+}
 async function runAI(){
   if(!cutSrc||aiBusy) return; aiBusy=true; const msg=t=>{ $('cutMsg').className='status'; $('cutMsg').innerHTML='<span class="spin"></span> '; $('cutMsg').append(t); };
-  try{ const sess=await getSession(msg); msg('Finding the product…');
-    const {w,h}=cutSrc, cv=$('cutBefore');
-    const p1=upsample(await predict(sess,cv,0,0,w,h,false),w,h); let x0=w,y0=h,x1=-1,y1=-1;
-    for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(p1[y*w+x]>0.3){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
-    let prob=p1;
-    if(x1>=0){ const mw=(x1-x0)*0.15, mh=(y1-y0)*0.15; x0=Math.max(0,Math.floor(x0-mw)); y0=Math.max(0,Math.floor(y0-mh)); x1=Math.min(w,Math.ceil(x1+mw)); y1=Math.min(h,Math.ceil(y1+mh));
-      const cw=x1-x0, ch=y1-y0; msg('Refining the edges…');
-      const a=await predict(sess,cv,x0,y0,cw,ch,false), b=await predict(sess,cv,x0,y0,cw,ch,true); const avg=new Float32Array(SZN*SZN); for(let i=0;i<avg.length;i++) avg[i]=(a[i]+b[i])/2;
-      const p2=upsample(avg,cw,ch); prob=new Float32Array(w*h); for(let i=0;i<w*h;i++) prob[i]=p1[i];
-      for(let y=0;y<ch;y++) for(let x=0;x<cw;x++){ const i=(y+y0)*w+x+x0; prob[i]=Math.max(prob[i],p2[y*cw+x]); } }
-    aiProb=guided(cutSrc,prob); aiBusy=false; renderCut();
-  }catch(e){ aiBusy=false; $('cutMsg').className='status warn'; $('cutMsg').textContent='The AI cut-out could not run here ('+((e&&e.message)||'error')+'). Switched to Plain colour mode.'; setCutMode('plain'); }
+  try{ aiProb=await aiProbability(cutSrc,$('cutBefore'),msg); aiBusy=false; renderCut(); }
+  catch(e){ aiBusy=false; $('cutMsg').className='status warn'; $('cutMsg').textContent='The AI cut-out could not run here ('+((e&&e.message)||'error')+'). Switched to Plain colour mode.'; setCutMode('plain'); }
 }
 function boxBlur(a,w,h,r){ // integral image box filter
   const I=new Float64Array((w+1)*(h+1)); for(let y=0;y<h;y++){ let row=0; for(let x=0;x<w;x++){ row+=a[y*w+x]; I[(y+1)*(w+1)+x+1]=I[y*(w+1)+x+1]+row; } }
@@ -2497,22 +2781,25 @@ function cutBgRef(d,w,h){
   const step=Math.max(1,Math.floor((w+h)/600)); for(let x=0;x<w;x+=step){ add(x); add((h-1)*w+x); } for(let y=0;y<h;y+=step){ add(y*w); add(y*w+w-1); }
   const med=a=>{ if(!a.length) return 255; a.sort((p,q)=>p-q); return a[a.length>>1]; }; return [med(rs),med(gs),med(bs)];
 }
+function alphaFrom(prob,w,h,thr,main){ const lo=thr*0.5, rng=thr*0.6, A=new Float32Array(w*h); for(let i=0;i<A.length;i++) A[i]=Math.min(1,Math.max(0,(prob[i]-lo)/rng)); return main?keepMain(A,w,h):A; }
+function softEdge(A,w,h,soft){ if(!(soft>0)) return A; const B=boxBlur(A,w,h,soft), o=new Float32Array(A.length); for(let i=0;i<A.length;i++) o[i]=A[i]>0.02?Math.min(1,B[i]*1.4):0; return o; }
 function finalAlpha(){
   const {w,h}=cutSrc, n=w*h; let A;
-  if(cutMode==='ai'){ if(!aiProb) return null; const thr=+$('cutThr').value, lo=thr*0.5, rng=thr*0.6; A=new Float32Array(n); for(let i=0;i<n;i++) A[i]=Math.min(1,Math.max(0,(aiProb[i]-lo)/rng)); if($('cutMain').checked) A=keepMain(A,w,h); }
+  if(cutMode==='ai'){ if(!aiProb) return null; A=alphaFrom(aiProb,w,h,+$('cutThr').value,$('cutMain').checked); }
   else A=plainAlpha(cutSrc,+$('cutTol').value,$('cutHoles').checked);
-  const soft=+$('cutSoft').value; if(soft>0){ const hard=A; const B=boxBlur(A,w,h,soft); A=new Float32Array(n); for(let i=0;i<n;i++) A[i]=hard[i]>0.02?Math.min(1,B[i]*1.4):0; }
+  A=softEdge(A,w,h,+$('cutSoft').value);
   if(cutEdits) for(let i=0;i<n;i++){ if(cutEdits[i]===1) A[i]=1; else if(cutEdits[i]===2) A[i]=0; }
   return A;
 }
-function buildOut(A){
-  const {w,h,data:d}=cutSrc; let x0=0,y0=0,x1=w-1,y1=h-1;
-  if($('cutTrim').checked){ x0=w;y0=h;x1=-1;y1=-1; for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(A[y*w+x]*d[(y*w+x)*4+3]>20){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+function trimOut(src,A,trim){
+  const {w,h,data:d}=src; let x0=0,y0=0,x1=w-1,y1=h-1;
+  if(trim){ x0=w;y0=h;x1=-1;y1=-1; for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(A[y*w+x]*d[(y*w+x)*4+3]>20){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
     if(x1<0){ x0=0;y0=0;x1=w-1;y1=h-1; } else { const pd=Math.round(Math.max(x1-x0,y1-y0)*0.03); x0=Math.max(0,x0-pd); y0=Math.max(0,y0-pd); x1=Math.min(w-1,x1+pd); y1=Math.min(h-1,y1+pd); } }
   const ow=x1-x0+1, oh=y1-y0+1, out=document.createElement('canvas'); out.width=ow; out.height=oh; const ox=out.getContext('2d'), im=ox.createImageData(ow,oh), od=im.data;
   for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const si=(y+y0)*w+(x+x0), di=(y*ow+x)*4, so=si*4; od[di]=d[so]; od[di+1]=d[so+1]; od[di+2]=d[so+2]; od[di+3]=Math.round(d[so+3]*A[si]); }
   ox.putImageData(im,0,0); return out;
 }
+function buildOut(A){ return trimOut(cutSrc,A,$('cutTrim').checked); }
 function renderCut(){
   if(!cutSrc) return; const A=finalAlpha(); if(!A) return;
   const {w,h,data:d}=cutSrc, a=$('cutAfter'); if(a.width!==w||a.height!==h){ a.width=w; a.height=h; } const x=a.getContext('2d'), im=x.createImageData(w,h), od=im.data;
@@ -2557,6 +2844,51 @@ $('cutDl').onclick=async()=>{ if(!cutOut) return; const blob=await new Promise(r
   const dl=await cap.downloads; if(dl){ try{ await dl.save({filename:name,data:blob}); toast('PNG saved'); return; }catch(e){ if(e&&e.code==='declined'){ toast('Download cancelled'); return; } } }
   $('cutModal').hidden=true; showPng(blob,name); };
 function showPng(blob,name){ $('mTitle').textContent='Your PNG'; $('mImgs').innerHTML=''; const fig=document.createElement('figure'); const img=new Image(); img.src=URL.createObjectURL(blob); img.alt=name; img.className='checker'; const fc=document.createElement('figcaption'); fc.textContent=name; fig.append(img,fc); $('mImgs').append(fig); $('modal').hidden=false; }
+
+/* ---------- automatic clean-up for messy photos ---------- */
+// headless cut-out with the dialog's default settings; resolves to a transparent PNG blob
+async function cutoutPhoto(img,onMsg){
+  const k=Math.min(1,1200/Math.max(img.width,img.height)), w=Math.max(1,Math.round(img.width*k)), h=Math.max(1,Math.round(img.height*k));
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(img,0,0,w,h);
+  const src={w,h,data:x.getImageData(0,0,w,h).data};
+  const A=softEdge(alphaFrom(await aiProbability(src,c,onMsg||(()=>{})),w,h,0.5,true),w,h,1);
+  let kept=0; for(let i=0;i<A.length;i++) kept+=A[i]; const f=kept/A.length;
+  if(f<0.02||f>0.97) throw new Error(f<0.02?'no product found':'no background found');
+  const out=trimOut(src,A,true); return await new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('PNG failed')),'image/png'));
+}
+// busy background = border is not transparent, not near-white and not one plain colour
+function isMessy(img){ try{ const N=64, c=document.createElement('canvas'); c.width=N; c.height=N; const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(img,0,0,N,N); const d=x.getImageData(0,0,N,N).data;
+  const px=[]; let clear=0; for(let i=0;i<N;i++) for(const [a,b] of [[i,0],[i,N-1],[0,i],[N-1,i],[i,1],[i,N-2],[1,i],[N-2,i]]){ const o=(b*N+a)*4; if(d[o+3]<30){ clear++; continue; } px.push([d[o],d[o+1],d[o+2]]); }
+  if(clear>px.length*0.25||!px.length) return false;
+  const m=[0,1,2].map(ch=>px.reduce((s,p)=>s+p[ch],0)/px.length), sd=Math.sqrt(px.reduce((s,p)=>s+(p[0]-m[0])**2+(p[1]-m[1])**2+(p[2]-m[2])**2,0)/px.length/3);
+  const near=px.filter(p=>Math.abs(p[0]-m[0])+Math.abs(p[1]-m[1])+Math.abs(p[2]-m[2])<60).length/px.length;
+  if(Math.min(...m)>225&&sd<22) return false; if(sd<16||near>0.9) return false; return true; }catch{ return false; } }
+const AUTOCUT_KEY='parco-autocut';
+const autoCutOn=()=>{ try{ return localStorage.getItem(AUTOCUT_KEY)==='1'; }catch{ return false; } };
+let cutQ=[], cutQBusy=false, cutQTotal=0, cutQFailed=[];
+function cutHint(html){ const h=$('cutHint'); h.hidden=!html; h.innerHTML=html||''; }
+function hintMessy(){ if(cutQBusy) return; const idx=state.photos.map((p,i)=>p.messy&&!p.orig&&!p.cutDismissed?i:-1).filter(i=>i>=0); if(!idx.length){ cutHint(''); return; }
+  cutHint(`<span>${idx.length===1?'Photo '+(idx[0]+1)+' has':'Photos '+idx.map(i=>i+1).join(', ')+' have'} a busy background. A clean cut-out usually looks better on the post.</span><button type="button" class="btn sm primary" id="cutAuto">Clean background</button><button type="button" class="btn sm" id="cutSkip">Keep as is</button><label class="chk"><input type="checkbox" id="cutAlways"${autoCutOn()?' checked':''}>Always clean busy photos automatically</label>`);
+  $('cutAuto').onclick=()=>queueCut(idx.map(i=>state.photos[i].uid)); $('cutSkip').onclick=()=>{ idx.forEach(i=>{ state.photos[i].cutDismissed=true; }); cutHint(''); };
+  $('cutAlways').onchange=e=>{ try{ localStorage.setItem(AUTOCUT_KEY,e.target.checked?'1':'0'); }catch{} if(e.target.checked) queueCut(idx.map(i=>state.photos[i].uid)); }; }
+function checkMessy(list){ list.forEach(p=>{ if(!p.sampleKey&&!p.transparent) p.messy=isMessy(p.img); }); const m=list.filter(p=>p.messy); if(!m.length) return; if(autoCutOn()) queueCut(m.map(p=>p.uid)); else hintMessy(); }
+function queueCut(uids){ uids.forEach(u=>{ if(!cutQ.includes(u)) { cutQ.push(u); cutQTotal++; } }); runCutQ(); }
+async function runCutQ(){
+  if(cutQBusy) return; cutQBusy=true; let done=0;
+  const say=t=>cutHint(`<span><span class="spin"></span> Cleaning photo ${Math.min(cutQTotal,done+1)} of ${cutQTotal}: ${esc(t)}</span>`);
+  while(cutQ.length){ const u=cutQ.shift(), i=state.photos.findIndex(p=>p.uid===u), ph=state.photos[i]; if(!ph){ done++; continue; }
+    try{ const blob=await cutoutPhoto(ph.img,say); const j=state.photos.findIndex(p=>p.uid===u); if(j<0){ done++; continue; }
+      const np=await makePhoto({src:URL.createObjectURL(blob),label:ph.label,png:true,zoom:ph.zoom,ox:ph.ox,oy:ph.oy}); np.orig={src:ph.src,sampleKey:ph.sampleKey,assetId:ph.assetId,png:ph.png,label:ph.label};
+      PHOTO_UNDO.push({uid:np.uid,old:ph}); UNDO.push('__photo__'); REDO=[]; updUndo(); state.photos[j]=np; syncUI(); render(); }
+    catch(e){ console.warn('Automatic cut-out failed',e); cutQFailed.push(u); }
+    done++; }
+  cutQBusy=false; const ok=cutQTotal-cutQFailed.length, failed=cutQFailed.slice(); cutQTotal=0; cutQFailed=[];
+  failed.forEach(u=>{ const p=state.photos.find(q=>q.uid===u); if(p) p.cutDismissed=true; }); hintMessy();
+  if(ok) toast(`Background removed from ${ok} photo${ok>1?'s':''}. ↺ on the photo restores the original; Undo works too.`);
+  if(failed.length){ const i=state.photos.findIndex(p=>p.uid===failed[0]); if(i>=0){ toast(`Automatic clean-up did not work for ${failed.length>1?failed.length+' photos':'this photo'}. Adjust it by hand here.`); openCut(i); } }
+}
+let PHOTO_UNDO=[];
+function undoPhoto(){ const e=PHOTO_UNDO.pop(); if(!e) return; const i=state.photos.findIndex(p=>p.uid===e.uid); if(i>=0){ e.old.cutDismissed=true; state.photos[i]=e.old; syncUI(); render(); toast('Original photo back'); } }
 
 /* ---------- sign-in ---------- */
 const AUTH_KEY='parco_auth_v1';

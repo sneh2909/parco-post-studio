@@ -5,3 +5,6 @@ node_modules/
 Thumbs.db
 *.log
 .claude/settings.local.json
+tests/out/
+__pycache__/
+.pytest_cache/
