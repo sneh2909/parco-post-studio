@@ -463,6 +463,13 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
     <!-- CAPTION -->
     <div class="tabpanel" id="p-caption" role="tabpanel" hidden>
       <div class="sec">
+        <h3 class="sec-h">Caption language <span class="aside">Each version is kept, so you can switch back</span></h3>
+        <div class="seg" id="capLangs" role="group" aria-label="Caption language"></div>
+        <label class="chk"><input type="checkbox" id="capPost">Also translate the text on the post</label>
+        <div class="cap-actions"><button class="btn sm" id="capRegen" type="button">Write again in this language</button></div>
+        <p class="status" id="capStatus" aria-live="polite"></p>
+      </div>
+      <div class="sec">
         <h3 class="sec-h">Instagram / Facebook caption</h3>
         <textarea id="caption" data-k="caption" rows="9"></textarea>
         <label class="f">Hashtags<textarea id="hashtags" data-k="hashtags" rows="3"></textarea></label>
@@ -657,6 +664,7 @@ function exampleState(){
     caption:'Ready stock: CGP water pump (Part No. 1234344) for Greaves CIFA and Conmat transit mixers.\n\nPARCO Engineering Corporation, Ahmedabad also supplies transit mixer spares for Schwing Stetter, Putzmeister, Venus and KYB, with supply across India.\n\nWhatsApp your enquiry: +91 63527 76505',
     hashtags:DEFAULT_TAGS,
     waText:'Ready stock: CGP water pump for Greaves CIFA / Conmat transit mixers. Pan-India supply. Enquire: +91 63527 76505',
+    captions:{}, capLang:'',
     photos:[], bgPhoto:null, brandImg:null, active:0
   };
 }
@@ -2087,7 +2095,7 @@ function syncUI(){ updateShowAvail();
   const bimg=state.brandLogo==='nasco'?ASSETS.nasco:(state.brandLogo==='custom'&&state.brandImg?state.brandImg.src:null);
   $('brThumb').hidden=!bimg; if(bimg) $('brThumb').src=bimg;
   $('bgThumb').hidden=!state.bgPhoto; $('bgRemove').hidden=!state.bgPhoto; if(state.bgPhoto){ $('bgThumb').src=state.bgPhoto.src; $('bgLbl').textContent='Shown faded behind the product (Showcase, Spec Sheet, Ribbon, Spotlight, Catalog)'; } else $('bgLbl').textContent='Optional · a plant, site or truck photo shown faded behind the product';
-  renderSpecs(); syncPhotoUI(); renderPhotoList();
+  renderSpecs(); syncPhotoUI(); renderPhotoList(); paintCapLangs();
 }
 function syncPhotoUI(){
   const ph=state.photos[state.active]; const dis=!ph; ['z','ox','oy','phReset'].forEach(id=>$(id).disabled=dis);
@@ -2321,6 +2329,7 @@ function applyCopy(r){
   if(Array.isArray(r.bullets)&&r.bullets.length) T.bullets=r.bullets.map(str).filter(Boolean).slice(0,6);
   if(Array.isArray(r.photo_labels)) r.photo_labels.forEach((l,i)=>{ const ph=state.photos[i]; if(ph&&str(l)&&!ph.label.trim()) ph.label=str(l); });
   if(str(r.cta)) T.cta=str(r.cta); if(str(r.caption)) state.caption=str(r.caption); if(str(r.hashtags)) state.hashtags=str(r.hashtags); if(str(r.whatsapp)) state.waText=str(r.whatsapp);
+  if(str(r.caption)){ state.capLang=state.lang; const c=capStore(); delete c[state.lang]; keepCap(); } scriptFonts().then(render);
 }
 function localCopy(){
   const parts=state.writeup.split(/(?<=[.!?])\s+|\n+/).map(s=>s.trim()).filter(Boolean);
@@ -2349,6 +2358,58 @@ $('gen').onclick=async()=>{
     else setStatus('Could not write the post this time'+(e&&e.message?': '+e.message:'.')+' Your text is unchanged.','warn');
   }finally{ genBusy=false; $('gen').disabled=false; }
 };
+
+/* ---------- caption languages: one version per language in state.captions[lang] ---------- */
+const CAP_LANGS={English:'English',Hinglish:'Hinglish',Hindi:'हिन्दी',Gujarati:'ગુજરાતી'}, POST_KEYS=['eyebrow','headline','sub','category','cta'];
+let capBusy=false;
+const capSrc=()=>state.product+'|'+state.writeup;
+function capStore(){ state.captions=state.captions||{}; if(!state.capLang) state.capLang=state.lang||'English'; return state.captions; }
+function keepCap(){ const c=capStore(), l=state.capLang; c[l]={...(c[l]||{}),caption:state.caption||'',hashtags:state.hashtags||'',whatsapp:state.waText||''}; if(!c[l].src) c[l].src=capSrc(); }
+function postSnap(){ const T=state.text; return {...Object.fromEntries(POST_KEYS.map(k=>[k,T[k]||''])),bullets:[...(T.bullets||[])]}; }
+function applyPost(p){ const T=state.text; POST_KEYS.forEach(k=>{ if(typeof p[k]==='string'&&p[k].trim()) T[k]=p[k].trim(); }); if(Array.isArray(p.bullets)&&p.bullets.length) T.bullets=p.bullets.map(x=>String(x||'').trim()).filter(Boolean).slice(0,6); }
+// canvas text does not trigger webfont loading, and Google serves Indic scripts as separate subsets
+function scriptFonts(){ const s=JSON.stringify([state.text,state.texts||{},state.specs||[],state.badges||[]]), L=[];
+  if(/[ऀ-ॿ]/.test(s)) L.push(['Noto Sans Devanagari','हिन्दी']); if(/[઀-૿]/.test(s)) L.push(['Noto Sans Gujarati','ગુજરાતી']);
+  if(!L.length||!document.fonts) return Promise.resolve(); return Promise.race([Promise.all(L.flatMap(([f,t])=>['500','700','800'].map(w=>document.fonts.load(`${w} 40px "${f}"`,t).catch(()=>{})))),new Promise(r=>setTimeout(r,5000))]); }
+function paintCapLangs(){ const box=$('capLangs'); if(!box) return; const c=state.captions||{}, cur=state.capLang||state.lang;
+  box.innerHTML=Object.entries(CAP_LANGS).map(([k,v])=>`<button type="button" data-cl="${k}" aria-pressed="${k===cur}"><b>${v}</b><small>${c[k]&&c[k].caption?(c[k].src===capSrc()?'Ready':'Older write-up'):'Write with AI'}</small></button>`).join(''); }
+function capSay(m,cls){ const el=$('capStatus'); el.className='status'+(cls&&cls!=='busy'?' '+cls:''); el.innerHTML=''; if(cls==='busy'){ el.innerHTML='<span class="spin"></span> '; el.append(m); } else el.textContent=m; }
+function capPrompt(lang,withPost){ const wa=state.text.whatsapp||'+91 63527 76505';
+  return `You write social media captions for PARCO Engineering Corporation, Ahmedabad (since 1971), an importer and distributor of spare parts for heavy earthmoving equipment, transit mixers, concrete pumps and industrial DG sets.
+Rules:
+- Enquiry-only marketing: never mention prices, discounts, offers or "buy now". Drive WhatsApp enquiries.
+- Use only facts from the write-up. Never invent specifications, part numbers or stock claims.
+- Language: ${lang}. ${LANG_NOTE[lang]||''}
+- Always keep part names, brand names, machine names and part numbers in English (Latin letters).
+- Tone: ${state.tone}.
+Product name: ${state.product||'(not given)'}
+Write-up:
+"""
+${state.writeup}
+"""
+Return only a JSON object:
+"caption": Instagram/Facebook caption, 50 to 110 words, 2-3 short paragraphs, ending with a line inviting WhatsApp enquiries on ${wa}
+"hashtags": 10 to 14 hashtags in one string separated by spaces, always including #PARCO
+"whatsapp": WhatsApp Status text, at most 45 words, ending with ${wa}`+(withPost?`
+"post": the text on the image in ${lang}: {"eyebrow": at most 18 characters, "headline": at most 22 characters, "subhead": at most 40 characters, "category": at most 26 characters, "cta": at most 22 characters, "bullets": array of ${Math.max(1,(state.text.bullets||[]).length)} lines of at most 34 characters}. Current text: ${JSON.stringify(postSnap())}`:''); }
+async function pickCapLang(l,force){
+  if(capBusy||!CAP_LANGS[l]) return; keepCap(); const from=state.capLang, withPost=$('capPost').checked, c=capStore();
+  if(withPost&&from!==l) c[from].post=postSnap();
+  const have=c[l], fresh=have&&have.caption&&have.src===capSrc()&&(!withPost||have.post);
+  if(fresh&&!force){ if(l!==from){ state.capLang=l; state.caption=have.caption; state.hashtags=have.hashtags||state.hashtags; state.waText=have.whatsapp||''; if(withPost) applyPost(have.post); syncUI(); await scriptFonts(); render(); } capSay(`Showing the ${CAP_LANGS[l]} version.`,'ok'); return; }
+  const sample=await cap.sample; if(!sample){ capSay('AI is off. Tap ✦ AI settings and add your key to write captions in other languages.','warn'); return; }
+  capBusy=true; $('capRegen').disabled=true; capSay(`Writing in ${CAP_LANGS[l]}…`,'busy');
+  try{ const r=await sample.json(capPrompt(l,withPost),{modelTier:'default',cache:false}); const str=v=>typeof v==='string'?v.trim():'';
+    if(!r||!str(r.caption)) throw Object.assign(new Error('The AI reply had no caption.'),{code:'bad_response'});
+    let post=have&&have.post; if(withPost&&r.post&&typeof r.post==='object'){ const P=r.post; post={eyebrow:str(P.eyebrow),headline:str(P.headline),sub:str(P.subhead||P.sub),category:str(P.category),cta:str(P.cta),bullets:Array.isArray(P.bullets)?P.bullets.map(str).filter(Boolean):[]}; }
+    c[l]={caption:str(r.caption),hashtags:str(r.hashtags)||state.hashtags,whatsapp:str(r.whatsapp),src:capSrc(),...(post?{post}:{})};
+    state.capLang=l; state.caption=c[l].caption; state.hashtags=c[l].hashtags; state.waText=c[l].whatsapp; if(withPost&&post) applyPost(post);
+    syncUI(); await scriptFonts(); render(); capSay(`${CAP_LANGS[l]} version ready. Edits are kept when you switch languages.`,'ok');
+  }catch(e){ const code=e&&e.code; capSay(code==='rate_limited'?'Too many requests just now. Wait a minute and try again.':code==='bad_key'||code==='network'?e.message:'Could not write this version'+(e&&e.message?': '+e.message:'.'),'warn'); }
+  finally{ capBusy=false; $('capRegen').disabled=false; }
+}
+$('capLangs').addEventListener('click',e=>{ const b=e.target.closest('[data-cl]'); if(b) pickCapLang(b.dataset.cl,false); });
+$('capRegen').onclick=()=>pickCapLang(state.capLang||state.lang,true);
 
 /* ---------- AI design ideas ---------- */
 let ideaSeen=[];
@@ -2423,7 +2484,7 @@ $('ideasBtn').onclick=()=>{ ideaSeen=[]; showIdeas(); }; $('ideasMore').onclick=
 $('newPost').onclick=()=>{
   const o=state; const n=exampleState();
   Object.assign(n,{footStyle:o.footStyle,look:o.look,sizes:{...o.sizes},fonts:{...o.fonts},format:o.format,template:o.template,theme:o.theme,colors:{...o.colors},show:{...o.show},wm:{...o.wm},wa:{...o.wa},lang:o.lang,tone:o.tone,textScale:o.textScale,brandLogo:o.brandLogo,brandImg:o.brandImg,bgPhoto:o.bgPhoto,
-    product:'',writeup:'',caption:'',hashtags:DEFAULT_TAGS,waText:'',photos:[],offsets:{},decos:{},extra:{},texts:{},specs:[{k:'Brand',v:''},{k:'Part No.',v:''},{k:'Application',v:''}],badges:o.badges.map(b=>({...b}))});
+    product:'',writeup:'',caption:'',hashtags:DEFAULT_TAGS,waText:'',photos:[],offsets:{},decos:{},extra:{},texts:{},captions:{},capLang:'',specs:[{k:'Brand',v:''},{k:'Part No.',v:''},{k:'Application',v:''}],badges:o.badges.map(b=>({...b}))});
   const keep=['since','values','sidetag','tagline','phones','whatsapp','email','web','address','cta','category','compat'];
   n.text={eyebrow:'',headline:'',sub:'',bullets:[]}; keep.forEach(k=>n.text[k]=o.text[k]);
   state=n; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); $('t-write').click(); $('product').focus();
@@ -2474,7 +2535,7 @@ function renderLib(){
 async function restorePhoto(ph){ if(!ph) return null; const src=ph.sampleKey?ASSETS.photos[ph.sampleKey]?.src:(ph.assetId?await LOCAL.assets.urlFor(ph.assetId):null); if(!src) return null; return await makePhoto({...ph,src}); }
 async function openPost(p,asCopy){
   const n=exampleState();
-  const merged={...n,...p,offsets:JSON.parse(JSON.stringify(p.offsets||{})),decos:JSON.parse(JSON.stringify(p.decos||{})),texts:JSON.parse(JSON.stringify(p.texts||{})),extra:JSON.parse(JSON.stringify(p.extra||{})),sizes:{...n.sizes,...(p.sizes||{})},fonts:{...n.fonts,...(p.fonts||{})},colors:{...n.colors,...(p.colors||{})},show:{...n.show,...(p.show||{})},wm:{...n.wm,...(p.wm||{})},wa:{...n.wa,...(p.wa||{})},text:{...n.text,...(p.text||{})},
+  const merged={...n,...p,offsets:JSON.parse(JSON.stringify(p.offsets||{})),decos:JSON.parse(JSON.stringify(p.decos||{})),texts:JSON.parse(JSON.stringify(p.texts||{})),extra:JSON.parse(JSON.stringify(p.extra||{})),captions:JSON.parse(JSON.stringify(p.captions||{})),sizes:{...n.sizes,...(p.sizes||{})},fonts:{...n.fonts,...(p.fonts||{})},colors:{...n.colors,...(p.colors||{})},show:{...n.show,...(p.show||{})},wm:{...n.wm,...(p.wm||{})},wa:{...n.wa,...(p.wa||{})},text:{...n.text,...(p.text||{})},
     specs:Array.isArray(p.specs)?p.specs.map(x=>({...x})):n.specs, badges:Array.isArray(p.badges)?p.badges.map(x=>({...x})):n.badges, photos:[],bgPhoto:null,brandImg:null,active:0,libId:asCopy?null:p.id};
   if(!TEMPLATES[merged.template]) merged.template='showcase'; delete merged.id; delete merged.thumb; delete merged.updatedAt; delete merged.title;
   let missing=0;
@@ -2482,7 +2543,7 @@ async function openPost(p,asCopy){
   try{ merged.bgPhoto=await restorePhoto(p.bgPhoto); }catch{ missing++; }
   try{ merged.brandImg=await restorePhoto(p.brandImg); }catch{ missing++; }
   if(merged.brandLogo==='custom'&&!merged.brandImg) merged.brandLogo='none';
-  state=merged; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); (async()=>{ const fs=new Set([state.fonts.head,state.fonts.body]); JSON.stringify(state.offsets||{}).replace(/"font":"([^"]+)"/g,(m0,f)=>{ fs.add(f); return m0; }); for(const f of fs) await loadFont(f); render(); })();
+  state=merged; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); (async()=>{ const fs=new Set([state.fonts.head,state.fonts.body]); JSON.stringify(state.offsets||{}).replace(/"font":"([^"]+)"/g,(m0,f)=>{ fs.add(f); return m0; }); for(const f of fs) await loadFont(f); await scriptFonts(); render(); })();
   window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   toast((asCopy?'Copy opened — save it as a new post':'Post opened')+(missing?` · ${missing} image(s) could not be loaded`:''));
 }
@@ -2498,9 +2559,9 @@ $('save').onclick=async()=>{
   try{ let skipped=0; const photos=[];
     for(const p of state.photos){ try{ photos.push(await serPhoto(p)); }catch{ skipped++; } }
     let bg=null, br=null; try{ bg=await serPhoto(state.bgPhoto); }catch{ skipped++; } try{ br=await serPhoto(state.brandImg,true); }catch{ skipped++; }
-    const doc={title:state.text.headline||'Untitled post',updatedAt:Date.now(),format:state.format,template:state.template,theme:state.theme,colors:{...state.colors},show:{...state.show},wm:{...state.wm},wa:{...state.wa},offsets:JSON.parse(JSON.stringify(state.offsets||{})),decos:JSON.parse(JSON.stringify(state.decos||{})),texts:JSON.parse(JSON.stringify(state.texts||{})),extra:JSON.parse(JSON.stringify(state.extra||{})),
+    keepCap(); const doc={title:state.text.headline||'Untitled post',updatedAt:Date.now(),format:state.format,template:state.template,theme:state.theme,colors:{...state.colors},show:{...state.show},wm:{...state.wm},wa:{...state.wa},offsets:JSON.parse(JSON.stringify(state.offsets||{})),decos:JSON.parse(JSON.stringify(state.decos||{})),texts:JSON.parse(JSON.stringify(state.texts||{})),extra:JSON.parse(JSON.stringify(state.extra||{})),
       brandLogo:state.brandLogo,textScale:state.textScale,look:state.look,footStyle:state.footStyle||'auto',sizes:{...state.sizes},fonts:{...state.fonts},product:state.product,writeup:state.writeup,lang:state.lang,tone:state.tone,text:{...state.text,bullets:bulletsList()},
-      specs:specList().map(r=>({k:r.k||'',v:r.v||''})),badges:state.badges.map(b=>({icon:b.icon,label:b.label||''})),caption:state.caption,hashtags:state.hashtags,waText:state.waText,
+      specs:specList().map(r=>({k:r.k||'',v:r.v||''})),badges:state.badges.map(b=>({icon:b.icon,label:b.label||''})),caption:state.caption,hashtags:state.hashtags,waText:state.waText,captions:JSON.parse(JSON.stringify(state.captions||{})),capLang:state.capLang||'',
       photos,bgPhoto:bg,brandImg:br,thumb:makeThumb()};
     if(state.libId) await db.collection('posts').doc(state.libId).set(doc); else { const ref=await db.collection('posts').add(doc); state.libId=ref.id; }
     toast(skipped?`Saved. ${skipped} image(s) could not be stored; add them again before downloading later.`:'Saved to library');
