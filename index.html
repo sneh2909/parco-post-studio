@@ -1948,7 +1948,7 @@ function snap(){ return JSON.stringify({o:state.offsets||{},d:state.decos||{},t:
 function updUndo(){ $('undoBtn').disabled=!UNDO.length; $('redoBtn').disabled=!REDO.length; }
 function pushUndo(){ const v=snap(); if(UNDO[UNDO.length-1]===v) return; UNDO.push(v); if(UNDO.length>80) UNDO.shift(); REDO=[]; updUndo(); }
 function applySnap(v){ const d=JSON.parse(v); state.offsets=d.o; state.decos=d.d||{}; state.texts=d.t||{}; d.p.forEach((a,i)=>{ const ph=state.photos[i]; if(ph){ ph.ox=a[0]; ph.oy=a[1]; ph.zoom=a[2]; } }); syncPhotoUI(); updSel(); render(); }
-function undo(){ if(!UNDO.length) return; const v=UNDO.pop(); if(v==='__style__'){ const st=STYLE_UNDO.pop(); if(st){ Object.assign(state,JSON.parse(st)); syncUI(); render(); } updUndo(); return; } REDO.push(snap()); applySnap(v); updUndo(); }
+function undo(){ if(!UNDO.length) return; const v=UNDO.pop(); if(v==='__style__'){ const st=STYLE_UNDO.pop(); if(st){ Object.assign(state,JSON.parse(st)); SEL=null; updSel(); syncUI(); render(); } updUndo(); return; } REDO.push(snap()); applySnap(v); updUndo(); }
 function redo(){ if(!REDO.length) return; UNDO.push(snap()); applySnap(REDO.pop()); updUndo(); }
 function clearHistory(){ UNDO=[]; REDO=[]; STYLE_UNDO=[]; updUndo(); }
 $('undoBtn').onclick=undo; $('redoBtn').onclick=redo;
@@ -2352,7 +2352,29 @@ $('gen').onclick=async()=>{
 
 /* ---------- AI design ideas ---------- */
 let ideaSeen=[];
-function ideaState(d){ const t=THEMES[d.theme]||THEMES.parco; return {...state,template:d.template,look:d.look||'auto',theme:d.theme,colors:{ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper},fonts:{head:d.head||state.fonts.head,body:d.body||state.fonts.body},footStyle:d.foot||'auto',offsets:{}}; }
+/* AI-placed decorations and tags: normalised 0–1 positions, validated against DECOS / DECO_COLORS / TB_PRESETS */
+const IDEA_MAX={decos:4,tags:2};
+const PRICE_RE=/₹|\brs(?:\b|\.|\d)|\binr\b|\boff\b|\boffers?\b|\bsale\b|\bprices?\b|\bpricing\b|discount|\bdeals?\b|\bcheap\b|buy\s*now|%/i;
+const normWords=s=>String(s||'').toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu,' ').trim().split(' ').filter(Boolean);
+const AI_ID=()=>'ai'+Math.random().toString(36).slice(2,7);
+const clamp=(v,a,b,d)=>{ v=+v; return Number.isFinite(v)?Math.max(a,Math.min(b,v)):d; };
+function tagAllowed(text,src){ if(!text||PRICE_RE.test(text)) return false; if(/ready[\s-]*stock/i.test(text)&&!/ready[\s-]*stock/i.test(src)) return false;
+  const have=new Set(normWords(src)), words=normWords(text); return words.length>0&&words.every(w=>have.has(w)||have.has(w.replace(/s$/,''))||have.has(w+'s')); }
+function cleanIdeaExtras(d,src){
+  const decos=(Array.isArray(d.decos)?d.decos:[]).filter(x=>x&&DECOS[x.type]).slice(0,IDEA_MAX.decos).map(x=>{ const w=clamp(x.w,0.05,0.6,0.2);
+    return {id:AI_ID(),type:x.type,color:DECO_COLORS[x.color]?x.color:'pop',x:clamp(x.x,0,1,0.5),y:clamp(x.y,0,x.back===true?1:0.82,0.5),w,rot:Math.round(clamp(x.rot,-45,45,0)),back:x.back===true}; });
+  const tags=(Array.isArray(d.tags)?d.tags:[]).filter(x=>x&&typeof x.text==='string').map(x=>({id:AI_ID(),text:x.text.replace(/\s+/g,' ').trim().slice(0,40),preset:TB_PRESETS[x.preset]?x.preset:'pill',x:clamp(x.x,0.3,0.7,0.5),y:clamp(x.y,0.03,0.82,0.08)}))
+    .filter(x=>tagAllowed(x.text,src)).slice(0,IDEA_MAX.tags);
+  return {decos,tags};
+}
+function ideaDecosFor(d,fmt){ const f=FORMATS[fmt], k=f.w/1080; return (d.decos||[]).map(x=>{ const D=DECOS[x.type], w=Math.round(x.w*f.w), h=Math.round(w*D.h/D.w);
+  return {id:x.id,type:x.type,x:Math.round(Math.max(0,Math.min(f.w-w,x.x*f.w-w/2))),y:Math.round(Math.max(0,Math.min(f.h-h,x.y*f.h-h/2))),w,h,color:x.color,op:1,rot:x.rot||0,k:1,n:1,back:!!x.back,ai:true}; }); }
+function ideaTexts(d){ return (d.tags||[]).map(x=>({id:x.id,...TB_PRESETS[x.preset],text:x.text,align:'center',x:x.x,y:x.y,op:1,ai:true})); }
+// user-added items stay; earlier AI items for that template are replaced by this idea's
+function ideaAddons(d){ const keep=a=>(a||[]).filter(x=>!x.ai), decos={...state.decos}, texts={...state.texts}, cur=(state.decos&&state.decos[d.template])||{};
+  decos[d.template]={...cur}; Object.keys(FORMATS).forEach(fmt=>{ decos[d.template][fmt]=keep(cur[fmt]).concat(ideaDecosFor(d,fmt)); });
+  texts[d.template]=keep(state.texts&&state.texts[d.template]).concat(ideaTexts(d)); return {decos,texts}; }
+function ideaState(d){ const t=THEMES[d.theme]||THEMES.parco; return {...state,template:d.template,look:d.look||'auto',theme:d.theme,colors:{ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper},fonts:{head:d.head||state.fonts.head,body:d.body||state.fonts.body},footStyle:d.foot||'auto',offsets:{},...ideaAddons(d)}; }
 function localIdeas(n){ const fit=Object.keys(TEMPLATES).filter(k=>TEMPLATES[k].n===Math.max(1,Math.min(4,state.photos.length||1))&&k!==state.template); const looks=['classic','night','site'], th=Object.keys(THEMES), heads=['Barlow Condensed','Oswald','Teko','Bebas Neue','Saira Condensed','Anton','Rajdhani','Fjalla One'];
   const out=[]; let i=ideaSeen.length; while(out.length<n){ const t=fit.length?fit[i%fit.length]:state.template; out.push({template:t,look:looks[(i+1)%3],theme:th[(i*2)%th.length],head:heads[i%heads.length],body:'Barlow',foot:'auto',name:TEMPLATES[t].name+' · '+LOOKS[looks[(i+1)%3]].name,why:'A fresh mix of layout, colours and type for the same post.'}); i++; } return out; }
 async function getIdeas(){
@@ -2368,11 +2390,16 @@ Colour themes: ${Object.entries(THEMES).map(([k,t])=>k+' ('+t.name+')').join(', 
 Headline fonts: ${FONTS_ALL.join(', ')}
 Contact styles: band, plain, navy, dark, light
 Avoid repeating these already shown: ${ideaSeen.map(d=>d.template+'/'+d.look+'/'+d.theme).join('; ')||'none'}
-Return only JSON: {"ideas":[{"name":"short catchy name","template":"key","look":"classic|night|site","theme":"key","head":"font","body":"font","foot":"style","why":"one sentence on why this suits the product"}]} with exactly 3 ideas that differ in template or look.`;
+Decorations (optional, up to ${IDEA_MAX.decos} per idea; use the key): ${Object.entries(DECOS).map(([k,d])=>k+' ('+d.n+')').join(', ')}
+Decoration colours: ${Object.keys(DECO_COLORS).join(', ')}
+Tags (optional, up to ${IDEA_MAX.tags} per idea) are short text labels. Tag styles: ${Object.keys(TB_PRESETS).join(', ')}
+Tag rules: copy the words from the write-up or product name (a brand, part number, machine name or stock line). Never mention prices, discounts, offers, sale or "buy now". Use "Ready stock" only if the write-up says ready stock.
+Positions are fractions of the post (0 to 1, top left is 0,0). For decorations x,y is the centre, w is the width as a fraction of the post width (0.05 to 0.6), rot is degrees (-45 to 45), back true puts it behind the photos and text. For tags x is the centre and y is the top edge. Keep everything clear of the product photo centre, the headline and the contact footer (y above 0.82).
+Return only JSON: {"ideas":[{"name":"short catchy name","template":"key","look":"classic|night|site","theme":"key","head":"font","body":"font","foot":"style","why":"one sentence on why this suits the product","decos":[{"type":"key","color":"key","x":0.85,"y":0.15,"w":0.18,"rot":0,"back":false}],"tags":[{"text":"words from the write-up","preset":"pill","x":0.5,"y":0.08}]}]} with exactly 3 ideas that differ in template or look.`;
   try{ const o={modelTier:'default',cache:false}; try{ const ims=[]; for(let i=0;i<Math.min(2,state.photos.length);i++) ims.push(await photoBlob(state.photos[i],512,'image/jpeg')); if(ims.length) o.images=ims; }catch{}
     let r; try{ r=await sample.json(prompt,o); }catch(e){ if(o.images&&e&&['images_unavailable','image_rejected','prompt_too_large'].includes(e.code)){ delete o.images; r=await sample.json(prompt,o); } else throw e; }
     let list=(r&&r.ideas)||[];
-    list=list.filter(d=>d&&TEMPLATES[d.template]).map(d=>({...d,look:LOOKS[d.look]?d.look:'classic',theme:THEMES[d.theme]?d.theme:'parco',head:FONTS_ALL.includes(d.head)?d.head:'Barlow Condensed',body:FONTS_ALL.includes(d.body)?d.body:'Barlow',foot:['band','plain','navy','dark','light'].includes(d.foot)?d.foot:'auto'}));
+    list=list.filter(d=>d&&TEMPLATES[d.template]).map(d=>({...d,look:LOOKS[d.look]?d.look:'classic',theme:THEMES[d.theme]?d.theme:'parco',head:FONTS_ALL.includes(d.head)?d.head:'Barlow Condensed',body:FONTS_ALL.includes(d.body)?d.body:'Barlow',foot:['band','plain','navy','dark','light'].includes(d.foot)?d.foot:'auto',...cleanIdeaExtras(d,state.product+' '+state.writeup)}));
     if(list.length<3) list=list.concat(localIdeas(3-list.length)); return {list:list.slice(0,3),ai:true}; }
   catch(e){ return {list:localIdeas(3),ai:false,err:e&&e.code}; }
 }
@@ -2382,14 +2409,14 @@ async function showIdeas(){
   $('ideasNote').textContent=ai?'Three different designs with the same photos and write-up, picked by AI. Pick one to use it; your text stays the same.':(err==='no_key'?'AI is off. Tap ✦ AI settings and add your key to get designs picked by AI. These are three quick alternatives.':err==='bad_key'?'The AI key was not accepted (check ✦ AI settings), so these are three quick alternatives.':err==='rate_limited'?'The AI is busy right now, so these are three quick alternatives.':'Three quick alternatives with the same photos and write-up.');
   const fonts=new Set(); list.forEach(d=>{ fonts.add(d.head); fonts.add(d.body); }); await Promise.all([...fonts].map(loadFont));
   grid.innerHTML=''; list.forEach(d=>{ const card=document.createElement('div'); card.className='idea'; const cv2=document.createElement('canvas'); const f=FORMATS[state.format], tw=420, sc=tw/f.w; cv2.width=tw; cv2.height=Math.round(f.h*sc); const x=cv2.getContext('2d'); x.setTransform(sc,0,0,sc,0,0); renderPost(x,f.w,f.h,ideaState(d),false);
-    const b=document.createElement('b'); b.textContent=d.name||TEMPLATES[d.template].name; const sm=document.createElement('small'); sm.textContent=(d.why||'')+` (${TEMPLATES[d.template].name}, ${LOOKS[d.look].name} look, ${d.head})`;
+    const b=document.createElement('b'); b.textContent=d.name||TEMPLATES[d.template].name; const sm=document.createElement('small'); const extras=[d.decos&&d.decos.length?d.decos.length+' decoration'+(d.decos.length>1?'s':''):'',d.tags&&d.tags.length?d.tags.length+' tag'+(d.tags.length>1?'s':''):''].filter(Boolean).join(', '); sm.textContent=(d.why||'')+` (${TEMPLATES[d.template].name}, ${LOOKS[d.look].name} look, ${d.head}${extras?', '+extras:''})`;
     const btn=document.createElement('button'); btn.type='button'; btn.className='btn primary'; btn.textContent='Use this design';
-    btn.onclick=()=>{ pushUndoAll(); const ns=ideaState(d); Object.assign(state,{template:ns.template,look:ns.look,theme:ns.theme,colors:ns.colors,fonts:ns.fonts,footStyle:ns.footStyle}); SEL=null; updSel(); syncUI(); render(); $('ideasModal').hidden=true; toast('Design applied. Undo brings back the previous one.'); };
+    btn.onclick=()=>{ pushUndoAll(); const ns=ideaState(d); Object.assign(state,{template:ns.template,look:ns.look,theme:ns.theme,colors:ns.colors,fonts:ns.fonts,footStyle:ns.footStyle,decos:ns.decos,texts:ns.texts}); SEL=null; updSel(); syncUI(); render(); $('ideasModal').hidden=true; toast('Design applied. Undo brings back the previous one.'); };
     card.append(cv2,b,sm,btn); grid.append(card); });
   $('ideasMore').disabled=false;
 }
 let STYLE_UNDO=[];
-function pushUndoAll(){ STYLE_UNDO.push(JSON.stringify({template:state.template,look:state.look,theme:state.theme,colors:state.colors,fonts:state.fonts,footStyle:state.footStyle})); UNDO.push('__style__'); REDO=[]; updUndo(); }
+function pushUndoAll(){ STYLE_UNDO.push(JSON.stringify({template:state.template,look:state.look,theme:state.theme,colors:state.colors,fonts:state.fonts,footStyle:state.footStyle,decos:state.decos||{},texts:state.texts||{}})); UNDO.push('__style__'); REDO=[]; updUndo(); }
 $('ideasBtn').onclick=()=>{ ideaSeen=[]; showIdeas(); }; $('ideasMore').onclick=showIdeas; $('ideasClose').onclick=()=>{ $('ideasModal').hidden=true; };
 
 /* ---------- new post ---------- */

@@ -10,7 +10,9 @@ Users: the PARCO Engineering Corporation team (Ahmedabad), posting product promo
   - Shared contact footer: `stdFooter()` / `contactFooter()` / `barFooter()` — same position on every template (heights `CB1`, `CB2`, `CTAG`).
   - Add-ons: decorations (`DECOS`, `drawDeco`, `state.decos`), text boxes (`drawTextBoxes`, `state.texts`), optional extras (`drawExtras`, `state.extra`), WhatsApp button (`waButton`).
   - Storage: `LOCAL` (IndexedDB) provides `db` (posts), `assets` (uploaded photo blobs) and `downloads`. Library code calls it through `cap.*`.
-  - Sign-in: user IDs in `config.js` (`PARCO_CONFIG.users`, PBKDF2-SHA256, 150k iterations). Saved posts are namespaced per user (`posts~<userId>` in IndexedDB).
+  - Sign-in: optional; `config.js` has `users:[]` so everyone goes straight in. Saved posts live in one shared `posts` collection (old `posts~<userId>` data is merged in). Back up / Restore exports the library as JSON.
+  - AI (bring your own key): `AI` holds provider (Gemini/Claude) and key in `localStorage` only (`parco-ai-v1`). Call it through `const s=await cap.sample; s.json(prompt,{images})`; `null` means no key, so fall back to local logic.
+  - Design ideas: `getIdeas()` / `showIdeas()` / `ideaState()`. Ideas can carry `decos:[{type,color,x,y,w,rot,back}]` and `tags:[{text,preset,x,y}]` (0–1 coordinates), checked by `cleanIdeaExtras()`: at most 4 decorations and 2 tags, keys from `DECOS`/`DECO_COLORS`/`TB_PRESETS`, tag words must come from the write-up, `PRICE_RE` drops price/offer words. Applying an idea writes AI items (`ai:true`) into `state.decos[template][every format]` and `state.texts[template]`, replacing earlier AI items and keeping the user's own. `pushUndoAll()` snapshots style + decos + texts.
   - Background remover: `openCut()`; loads onnxruntime-web 1.20.1 from jsDelivr, model from `models/silueta.*.txt` (gzip+base64 parts), WASM from `ortw/`; falls back to `models/u2netp.txt` with WebGL.
 - `assets.js` — `window.PARCO_ASSETS` (logos, sample photos). Large; avoid reading it whole.
 - `config.js` — sign-in accounts. Manage with `node tools/users.mjs add|password|remove|list`.
@@ -19,4 +21,5 @@ Users: the PARCO Engineering Corporation team (Ahmedabad), posting product promo
 - Brand palette (PARCO catalog): indigo `#2b3990`, logo blue `#1f74c9`, orange `#f26522`, amber `#fbb412`. Themes in `THEMES`.
 - Marketing is enquiry-only: no prices in copy.
 - Test changes by serving locally (`python -m http.server 8000`) and checking all three sizes (square, portrait 4:5, story 9:16) and looks.
+- Automated tests: `python -m pytest tests -q` (Playwright, Chromium). `tests/conftest.py` serves the repo and mocks the Gemini endpoint (`ai.handler = lambda prompt: {...}`); no real keys. Canvas screenshots of each size go to `tests/out/` (gitignored).
 - Never commit `.env` or API keys: the repo and site are public.
