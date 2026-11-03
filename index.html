@@ -2171,7 +2171,7 @@ const LOCAL=(()=>{
   async function snapshot(col){ const keys=await req('docs','readonly',s=>s.getAllKeys(IDBKeyRange.bound(col+'/',col+'/￿'))); const vals=await req('docs','readonly',s=>s.getAll(IDBKeyRange.bound(col+'/',col+'/￿')));
     const docs=keys.map((k,i)=>({id:String(k).slice(col.length+1),data:()=>vals[i]})).sort((a,b)=>((b.data().updatedAt||0)-(a.data().updatedAt||0))); return {docs,size:docs.length,empty:!docs.length}; }
   async function emit(col){ const ls=listeners[col]; if(!ls||!ls.length) return; const snp=await snapshot(col); ls.forEach(f=>{ try{ f(snp); }catch(e){} }); }
-  function collection(col){ const q={ orderBy(){ return q; }, limit(){ return q; }, where(){ return q; },
+  let USER='team'; function collection(col){ if(col==='posts') col='posts~'+USER; const q={ orderBy(){ return q; }, limit(){ return q; }, where(){ return q; },
       get:()=>snapshot(col),
       onSnapshot(next,err){ (listeners[col]=listeners[col]||[]).push(next); snapshot(col).then(next,e=>err&&err({message:String(e&&e.message||e)})); return ()=>{ listeners[col]=listeners[col].filter(f=>f!==next); }; },
       async add(data){ const id=rid(); await req('docs','readwrite',s=>s.put(data,col+'/'+id)); emit(col); return {id}; },
@@ -2184,7 +2184,7 @@ const LOCAL=(()=>{
     async urlFor(id){ if(urls[id]) return urls[id]; const b=await req('blobs','readonly',s=>s.get(id)); if(!b) return null; return urls[id]=URL.createObjectURL(b); },
     async delete(id){ await req('blobs','readwrite',s=>s.delete(id)); return {deleted:true}; } };
   const downloads={ async save({filename,data}){ const blob=data instanceof Blob?data:new Blob([data]); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000); return {status:'saved'}; } };
-  return {db:{collection,doc:p=>{ const i=p.lastIndexOf('/'); return collection(p.slice(0,i)).doc(p.slice(i+1)); }},assets,downloads};
+  return {setUser:u=>{ USER=String(u||'team'); },db:{collection,doc:p=>{ const i=p.lastIndexOf('/'); return collection(p.slice(0,i)).doc(p.slice(i+1)); }},assets,downloads};
 })();
 const use=n=>Promise.resolve(n==='db'?LOCAL.db:n==='assets'?LOCAL.assets:n==='downloads'?LOCAL.downloads:null);
 const cap={sample:use('sample'),downloads:use('downloads'),db:use('db'),assets:use('assets'),user:use('user')};
@@ -2334,11 +2334,13 @@ $('newPost').onclick=()=>{
 /* ---------- library ---------- */
 let db=null, assets=null, posts=[];
 function libMsg(title,body){ $('lib').innerHTML='<div class="empty"><strong></strong><span></span></div>'; $('lib').querySelector('strong').textContent=title; $('lib').querySelector('span').textContent=body; }
+let libUnsub=null;
 async function initLibrary(){
+  if(libUnsub){ try{ libUnsub(); }catch{} libUnsub=null; } posts=[];
   libMsg('Loading saved posts…',''); db=await cap.db; assets=await cap.assets;
   if(!db){ libMsg('Library not available here','Open this page signed in to claude.ai to save and reuse posts. Downloads still work.'); $('save').disabled=true; return; }
   const t=setTimeout(()=>libMsg('Still loading…','The library is taking longer than usual. Check your connection.'),10000);
-  db.collection('posts').orderBy('updatedAt','desc').limit(60).onSnapshot(snap=>{ clearTimeout(t); posts=snap.docs.map(d=>({id:d.id,...d.data()})); renderLib(); },err=>{ clearTimeout(t); libMsg('Could not load saved posts',err&&err.message||''); });
+  libUnsub=db.collection('posts').orderBy('updatedAt','desc').limit(60).onSnapshot(snap=>{ clearTimeout(t); posts=snap.docs.map(d=>({id:d.id,...d.data()})); renderLib(); },err=>{ clearTimeout(t); libMsg('Could not load saved posts',err&&err.message||''); });
 }
 function renderLib(){
   if(!posts.length){ libMsg('No saved posts yet','Make a post above and press “Save to library”. Saved posts can be reopened, edited and downloaded again in any size.'); return; }
@@ -2552,24 +2554,30 @@ function gateMode(mode,msg){
   else if(mode==='setup'){ $('gTitle').textContent='Create the admin account'; $('gNote').textContent='No one can sign in yet. Choose the user ID and password for the first admin. You can add staff accounts after this.'; form.hidden=false; $('gConfirmWrap').hidden=false; $('gKeepWrap').hidden=false; $('gBtn').textContent='Create admin and sign in'; $('gPass').autocomplete='new-password'; }
   else { $('gTitle').textContent=mode==='loading'?'Checking access…':'Can’t sign in here'; $('gNote').textContent=msg||'One moment.'; form.hidden=true; }
 }
+function cfgUsers(){ const c=window.PARCO_CONFIG||{}; if(Array.isArray(c.users)&&c.users.length) return c.users; if(c.password&&c.password.hash) return [{id:'team',name:'PARCO team',role:'staff',...c.password}]; return []; }
 async function initAuth(){
   gateMode('loading'); db=LOCAL.db; assets=LOCAL.assets; canEditPage=true; staffDocs=[];
-  const cfg=window.PARCO_CONFIG&&window.PARCO_CONFIG.password;
-  if(!cfg||!cfg.hash){ enterApp({docId:'team',id:'PARCO team',role:'staff'}); return; }
-  if(!(window.crypto&&crypto.subtle)){ gateMode('msg','This browser cannot check the password. Open the site in Chrome, Edge or Safari.'); return; }
-  const sess=readSession(); if(sess&&sess.id==='team'&&sess.h===cfg.hash.slice(0,12)){ enterApp({docId:'team',id:'PARCO team',role:'staff'}); return; }
-  $('gUser').closest('label').hidden=true; gateMode('login'); $('gTitle').textContent='Enter password'; $('gNote').textContent='PARCO Post Studio is for the PARCO team. Enter the team password.'; setTimeout(()=>$('gPass').focus(),50);
+  const users=cfgUsers();
+  if(!users.length){ enterApp({docId:'team',id:'PARCO team',role:'staff'}); return; }
+  if(!(window.crypto&&crypto.subtle)){ gateMode('msg','This browser cannot check passwords. Open the site in Chrome, Edge or Safari.'); return; }
+  const one=users.length===1&&users[0].id==='team';
+  const sess=readSession(); if(sess){ const u=users.find(x=>normId(x.id)===sess.id); if(u&&sess.h===u.hash.slice(0,12)){ enterApp({docId:normId(u.id),id:u.name||u.id,role:u.role||'staff'}); return; } clearSession(); }
+  $('gUser').closest('label').hidden=one; gateMode('login'); if(one){ $('gTitle').textContent='Enter password'; $('gNote').textContent='PARCO Post Studio is for the PARCO team. Enter the team password.'; } else { $('gNote').textContent='Sign in with your PARCO Post Studio user ID and password. Your saved posts stay in this browser.'; }
+  setTimeout(()=>(one?$('gPass'):$('gUser')).focus(),50);
 }
 $('gForm').addEventListener('submit',async e=>{
-  e.preventDefault(); const err=$('gErr'), btn=$('gBtn'), pw=$('gPass').value, keep=$('gKeep').checked, cfg=window.PARCO_CONFIG.password; err.textContent='';
-  if(!pw){ err.textContent='Enter the password.'; return; }
+  e.preventDefault(); const err=$('gErr'), btn=$('gBtn'), pw=$('gPass').value, keep=$('gKeep').checked, users=cfgUsers(); err.textContent='';
+  const one=users.length===1&&users[0].id==='team'; const id=one?'team':normId($('gUser').value);
+  if(!id||!pw){ err.textContent=one?'Enter the password.':'Enter your user ID and password.'; return; }
   btn.disabled=true; btn.textContent='Checking…';
-  try{ const h=await hashPw(pw,cfg.salt); if(h===cfg.hash){ const v=JSON.stringify({id:'team',h:cfg.hash.slice(0,12),t:Date.now()}); try{ (keep?localStorage:sessionStorage).setItem(AUTH_KEY,v); }catch{} $('gPass').value=''; enterApp({docId:'team',id:'PARCO team',role:'staff'}); } else err.textContent='That password is not correct.'; }
+  try{ const u=users.find(x=>normId(x.id)===id); const h=await hashPw(pw,u?u.salt:'AAAAAAAAAAAAAAAAAAAAAA==');
+    if(u&&h===u.hash){ const v=JSON.stringify({id,h:u.hash.slice(0,12),t:Date.now()}); try{ (keep?localStorage:sessionStorage).setItem(AUTH_KEY,v); }catch{} $('gPass').value=''; enterApp({docId:id,id:u.name||u.id,role:u.role||'staff'}); }
+    else err.textContent=one?'That password is not correct.':'User ID or password is incorrect.'; }
   catch{ err.textContent='Could not check the password. Try again.'; }
   finally{ btn.disabled=false; btn.textContent='Sign in'; }
 });
-function enterApp(u){ me=u; $('gate').hidden=true; $('app').hidden=false; $('library').hidden=false; showWho(); if(!libStarted){ libStarted=true; initLibrary(); } render(); }
-function showWho(){ $('who').hidden=false; $('whoName').textContent=me.id||me.docId; $('usersBtn').hidden=me.role!=='admin'; }
+function enterApp(u){ me=u; LOCAL.setUser(u.docId); $('gate').hidden=true; $('app').hidden=false; $('library').hidden=false; showWho(); libStarted=true; initLibrary(); render(); }
+function showWho(){ $('who').hidden=false; $('whoName').textContent=me.id||me.docId; $('usersBtn').hidden=true; }
 function signOut(msg){ me=null; clearSession(); $('app').hidden=true; $('library').hidden=true; $('who').hidden=true; $('umodal').hidden=true; $('gate').hidden=false; gateMode('login'); if(msg) $('gErr').textContent=msg; }
 $('signOut').onclick=()=>signOut();
 $('usersBtn').onclick=()=>{ renderUsers(); $('umodal').hidden=false; };

@@ -10,10 +10,10 @@ Users: the PARCO Engineering Corporation team (Ahmedabad), posting product promo
   - Shared contact footer: `stdFooter()` / `contactFooter()` / `barFooter()` — same position on every template (heights `CB1`, `CB2`, `CTAG`).
   - Add-ons: decorations (`DECOS`, `drawDeco`, `state.decos`), text boxes (`drawTextBoxes`, `state.texts`), optional extras (`drawExtras`, `state.extra`), WhatsApp button (`waButton`).
   - Storage: `LOCAL` (IndexedDB) provides `db` (posts), `assets` (uploaded photo blobs) and `downloads`. Library code calls it through `cap.*`.
-  - Sign-in: shared password checked against `config.js` (PBKDF2-SHA256, 150k iterations).
+  - Sign-in: user IDs in `config.js` (`PARCO_CONFIG.users`, PBKDF2-SHA256, 150k iterations). Saved posts are namespaced per user (`posts~<userId>` in IndexedDB).
   - Background remover: `openCut()`; loads onnxruntime-web 1.20.1 from jsDelivr, model from `models/silueta.*.txt` (gzip+base64 parts), WASM from `ortw/`; falls back to `models/u2netp.txt` with WebGL.
 - `assets.js` — `window.PARCO_ASSETS` (logos, sample photos). Large; avoid reading it whole.
-- `config.js` — password hash. Change with `node tools/set-password.mjs "..."`.
+- `config.js` — sign-in accounts. Manage with `node tools/users.mjs add|password|remove|list`.
 
 ## Conventions
 - Brand palette (PARCO catalog): indigo `#2b3990`, logo blue `#1f74c9`, orange `#f26522`, amber `#fbb412`. Themes in `THEMES`.
