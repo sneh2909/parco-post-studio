@@ -10,7 +10,7 @@ Make branded social media posts for **PARCO Engineering Corporation**, Ahmedabad
 - Add text boxes, 44 decorations (with strength / amount / fade / rotate), and a WhatsApp enquiry button
 - Background remover that runs in the browser (AI cut-out model, plus a plain-colour mode)
 - PARCO logo watermark, brand logo box, product details, highlights
-- Saved posts library (stored in the browser on each device)
+- Saved posts library: every saved post stays in the browser on that device; Back up / Restore moves posts between devices
 - Sign-in with separate user IDs; each user's saved posts are kept separately
 
 ## Run it locally

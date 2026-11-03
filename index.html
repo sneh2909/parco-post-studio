@@ -511,7 +511,7 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
 </main>
 
 <section class="wrap library" id="library" hidden>
-  <div class="lib-head"><h2>Saved posts</h2><p>Saved in this browser on this device.</p></div>
+  <div class="lib-head"><h2>Saved posts</h2><span style="flex:1"></span><button class="btn sm" type="button" id="libExport">Back up library</button><label class="btn sm" for="libImportFile">Restore backup</label><input type="file" id="libImportFile" class="vis-hide" accept=".json,application/json"><p id="libInfo" style="flex-basis:100%">Kept in this browser on this device.</p></div>
   <div id="lib"></div>
 </section>
 
@@ -2171,7 +2171,7 @@ const LOCAL=(()=>{
   async function snapshot(col){ const keys=await req('docs','readonly',s=>s.getAllKeys(IDBKeyRange.bound(col+'/',col+'/￿'))); const vals=await req('docs','readonly',s=>s.getAll(IDBKeyRange.bound(col+'/',col+'/￿')));
     const docs=keys.map((k,i)=>({id:String(k).slice(col.length+1),data:()=>vals[i]})).sort((a,b)=>((b.data().updatedAt||0)-(a.data().updatedAt||0))); return {docs,size:docs.length,empty:!docs.length}; }
   async function emit(col){ const ls=listeners[col]; if(!ls||!ls.length) return; const snp=await snapshot(col); ls.forEach(f=>{ try{ f(snp); }catch(e){} }); }
-  let USER='team'; function collection(col){ if(col==='posts') col='posts~'+USER; const q={ orderBy(){ return q; }, limit(){ return q; }, where(){ return q; },
+  let USER='team'; function collection(col){ const q={ orderBy(){ return q; }, limit(){ return q; }, where(){ return q; },
       get:()=>snapshot(col),
       onSnapshot(next,err){ (listeners[col]=listeners[col]||[]).push(next); snapshot(col).then(next,e=>err&&err({message:String(e&&e.message||e)})); return ()=>{ listeners[col]=listeners[col].filter(f=>f!==next); }; },
       async add(data){ const id=rid(); await req('docs','readwrite',s=>s.put(data,col+'/'+id)); emit(col); return {id}; },
@@ -2184,7 +2184,10 @@ const LOCAL=(()=>{
     async urlFor(id){ if(urls[id]) return urls[id]; const b=await req('blobs','readonly',s=>s.get(id)); if(!b) return null; return urls[id]=URL.createObjectURL(b); },
     async delete(id){ await req('blobs','readwrite',s=>s.delete(id)); return {deleted:true}; } };
   const downloads={ async save({filename,data}){ const blob=data instanceof Blob?data:new Blob([data]); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000); return {status:'saved'}; } };
-  return {setUser:u=>{ USER=String(u||'team'); },db:{collection,doc:p=>{ const i=p.lastIndexOf('/'); return collection(p.slice(0,i)).doc(p.slice(i+1)); }},assets,downloads};
+  async function mergeUserPosts(){ try{ const all=await req('docs','readonly',s=>s.getAllKeys()); const old=all.filter(k=>/^posts~[^/]+\//.test(String(k))); if(!old.length) return 0;
+      for(const k of old){ const v=await req('docs','readonly',s=>s.get(k)); const id=String(k).split('/').pop(); const exists=await req('docs','readonly',s=>s.get('posts/'+id)); if(exists===undefined) await req('docs','readwrite',s=>s.put(v,'posts/'+id)); }
+      emit('posts'); return old.length; }catch(e){ return 0; } }
+  return {mergeUserPosts,setUser:u=>{ USER=String(u||'team'); },db:{collection,doc:p=>{ const i=p.lastIndexOf('/'); return collection(p.slice(0,i)).doc(p.slice(i+1)); }},assets,downloads};
 })();
 const use=n=>Promise.resolve(n==='db'?LOCAL.db:n==='assets'?LOCAL.assets:n==='downloads'?LOCAL.downloads:null);
 const cap={sample:use('sample'),downloads:use('downloads'),db:use('db'),assets:use('assets'),user:use('user')};
@@ -2335,7 +2338,24 @@ $('newPost').onclick=()=>{
 let db=null, assets=null, posts=[];
 function libMsg(title,body){ $('lib').innerHTML='<div class="empty"><strong></strong><span></span></div>'; $('lib').querySelector('strong').textContent=title; $('lib').querySelector('span').textContent=body; }
 let libUnsub=null;
-async function initLibrary(){
+/* keep saved posts permanently + backup / restore */
+(async()=>{ try{ if(navigator.storage&&navigator.storage.persist){ const ok=await navigator.storage.persisted()||await navigator.storage.persist(); const el=$('libInfo'); if(el) el.textContent=ok?'Kept permanently in this browser on this device. Back up to move posts to another device.':'Kept in this browser on this device. Use Back up now and then to be safe.'; } }catch{} })();
+const b2d=b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(b); });
+$('libExport').onclick=async()=>{ const btn=$('libExport'); btn.disabled=true; try{ const snap=await LOCAL.db.collection('posts').get(); const posts=[], blobs={};
+    for(const d of snap.docs){ const v=d.data(); posts.push({id:d.id,data:v}); const ids=[...(v.photos||[]),v.bgPhoto,v.brandImg].filter(x=>x&&x.assetId).map(x=>x.assetId);
+      for(const id of ids){ if(blobs[id]) continue; const u=await LOCAL.assets.urlFor(id); if(u){ const b=await (await fetch(u)).blob(); blobs[id]=await b2d(b); } } }
+    const out=new Blob([JSON.stringify({app:'parco-post-studio',version:1,exported:new Date().toISOString(),posts,blobs})],{type:'application/json'});
+    await LOCAL.downloads.save({filename:`parco-library-${new Date().toISOString().slice(0,10)}.json`,data:out}); toast(`Backed up ${posts.length} post${posts.length===1?'':'s'}`); }
+  catch(e){ toast('Could not back up: '+((e&&e.message)||'try again')); } finally{ btn.disabled=false; } };
+$('libImportFile').addEventListener('change',async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const j=JSON.parse(await f.text()); if(j.app!=='parco-post-studio') throw new Error('This is not a PARCO Post Studio backup.');
+    const open=()=>new Promise((res,rej)=>{ const r=indexedDB.open('parco-post-studio',1); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); const d=await open();
+    for(const [id,url] of Object.entries(j.blobs||{})){ const b=await (await fetch(url)).blob(); await new Promise((res,rej)=>{ const t=d.transaction('blobs','readwrite'); t.objectStore('blobs').put(b,id); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+    for(const p of j.posts||[]) await LOCAL.db.collection('posts').doc(p.id).set(p.data);
+    toast(`Restored ${(j.posts||[]).length} post${(j.posts||[]).length===1?'':'s'}`); }
+  catch(err){ toast('Could not restore: '+((err&&err.message)||'invalid file')); } });
+
+async function initLibrary(){ await LOCAL.mergeUserPosts();
   if(libUnsub){ try{ libUnsub(); }catch{} libUnsub=null; } posts=[];
   libMsg('Loading saved posts…',''); db=await cap.db; assets=await cap.assets;
   if(!db){ libMsg('Library not available here','Open this page signed in to claude.ai to save and reuse posts. Downloads still work.'); $('save').disabled=true; return; }
@@ -2577,7 +2597,7 @@ $('gForm').addEventListener('submit',async e=>{
   finally{ btn.disabled=false; btn.textContent='Sign in'; }
 });
 function enterApp(u){ me=u; LOCAL.setUser(u.docId); $('gate').hidden=true; $('app').hidden=false; $('library').hidden=false; showWho(); libStarted=true; initLibrary(); render(); }
-function showWho(){ $('who').hidden=false; $('whoName').textContent=me.id||me.docId; $('usersBtn').hidden=true; }
+function showWho(){ if(!cfgUsers().length){ $('who').hidden=true; return; } $('who').hidden=false; $('whoName').textContent=me.id||me.docId; $('usersBtn').hidden=true; }
 function signOut(msg){ me=null; clearSession(); $('app').hidden=true; $('library').hidden=true; $('who').hidden=true; $('umodal').hidden=true; $('gate').hidden=false; gateMode('login'); if(msg) $('gErr').textContent=msg; }
 $('signOut').onclick=()=>signOut();
 $('usersBtn').onclick=()=>{ renderUsers(); $('umodal').hidden=false; };
