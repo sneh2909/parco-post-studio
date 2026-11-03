@@ -177,6 +177,13 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
 .deco-b canvas{width:56px;height:42px;display:block;border-radius:6px;background:#ffffff}
 .cut{width:min(900px,100%)}
 .ideas{width:min(1100px,100%)}
+.wk-cal{display:flex;flex-direction:column;gap:10px}
+.wk-row{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--panel-2)}
+.wk-row canvas{width:110px;height:110px;border-radius:8px;flex:none}
+.wk-info{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0;flex:1}
+.wk-info b{flex-basis:100%}.wk-info small{flex-basis:100%;color:var(--muted)}
+.wk-chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.wk-flag{color:#b45309!important;font-weight:600}.wk-ops{display:flex;gap:6px;flex-wrap:wrap}
 .ideas-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 @media (max-width:760px){.ideas-grid{grid-template-columns:1fr}}
 .idea{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--panel-2);min-width:0}
@@ -496,6 +503,7 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
       <button class="btn big" id="dlAll" type="button">All 3 sizes</button>
       <button class="btn hi big" id="save" type="button">Save to library</button>
       <button class="btn big" id="ideasBtn" type="button">✦ Design ideas</button>
+      <button class="btn big" id="weekBtn" type="button">📅 Plan a week</button>
       <button class="btn big" id="addTextBtn" type="button">＋ Text</button>
       <span class="grow"></span>
       <button class="btn big" id="newPost" type="button">New post</button>
@@ -578,6 +586,17 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
   <p class="note" id="ideasNote">Three different designs with the same photos and write-up. Pick one to use it; your text stays the same.</p>
   <div class="ideas-grid" id="ideasGrid"></div>
   <div class="cap-actions"><button class="btn" type="button" id="ideasMore">Show 3 more</button><button class="btn" type="button" id="ideasClose">Close</button></div>
+</div></div>
+<div class="modal" id="weekModal" hidden><div class="modal-box ideas">
+  <h3>Plan a week of posts</h3>
+  <p class="note">Paste one product per line: the name, a colon, then a short write-up. One AI call plans the week; captions are written one post at a time so the free AI limits are not hit. Drafts go to your library with their dates. Nothing is posted for you.</p>
+  <label class="f">Products<textarea id="wkList" rows="6" placeholder="CGP water pump: part no. 1234344, fits Greaves CIFA and Conmat transit mixers. Ready stock in Ahmedabad.&#10;Hydraulic pump: for Schwing Stetter concrete pumps, supply across India."></textarea></label>
+  <div class="row2"><label class="f">Number of posts<select id="wkN"><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option></select></label><label class="f">First day<input type="date" id="wkStart"></label></div>
+  <div class="row2"><label class="f">Language<select id="wkLang"><option>English</option><option>Hinglish</option><option>Hindi</option><option>Gujarati</option></select></label><label class="f">Tone<select id="wkTone"></select></label></div>
+  <div class="cap-actions"><button class="btn primary" type="button" id="wkPlan">Plan the week</button></div>
+  <p class="status" id="wkMsg" aria-live="polite"></p>
+  <div class="wk-cal" id="wkCal"></div>
+  <div class="cap-actions"><span id="wkActs" hidden style="display:contents"><button class="btn hi" type="button" id="wkDrafts">Save as drafts in library</button><button class="btn" type="button" id="wkCaps">Write all captions</button><button class="btn" type="button" id="wkExport">Export PNGs (3 sizes) + CSV</button></span><button class="btn" type="button" id="wkClose">Close</button></div>
 </div></div>
 <div class="modal" id="aiModal" hidden><div class="modal-box users">
   <h3>AI settings</h3>
@@ -2369,30 +2388,30 @@ function keepCap(){ const c=capStore(), l=state.capLang; c[l]={...(c[l]||{}),cap
 function postSnap(){ const T=state.text; return {...Object.fromEntries(POST_KEYS.map(k=>[k,T[k]||''])),bullets:[...(T.bullets||[])]}; }
 function applyPost(p){ const T=state.text; POST_KEYS.forEach(k=>{ if(typeof p[k]==='string'&&p[k].trim()) T[k]=p[k].trim(); }); if(Array.isArray(p.bullets)&&p.bullets.length) T.bullets=p.bullets.map(x=>String(x||'').trim()).filter(Boolean).slice(0,6); }
 // canvas text does not trigger webfont loading, and Google serves Indic scripts as separate subsets
-function scriptFonts(){ const s=JSON.stringify([state.text,state.texts||{},state.specs||[],state.badges||[]]), L=[];
+function scriptFonts(st){ st=st||state; const s=JSON.stringify([st.text,st.texts||{},st.specs||[],st.badges||[]]), L=[];
   if(/[ऀ-ॿ]/.test(s)) L.push(['Noto Sans Devanagari','हिन्दी']); if(/[઀-૿]/.test(s)) L.push(['Noto Sans Gujarati','ગુજરાતી']);
   if(!L.length||!document.fonts) return Promise.resolve(); return Promise.race([Promise.all(L.flatMap(([f,t])=>['500','700','800'].map(w=>document.fonts.load(`${w} 40px "${f}"`,t).catch(()=>{})))),new Promise(r=>setTimeout(r,5000))]); }
 function paintCapLangs(){ const box=$('capLangs'); if(!box) return; const c=state.captions||{}, cur=state.capLang||state.lang;
   box.innerHTML=Object.entries(CAP_LANGS).map(([k,v])=>`<button type="button" data-cl="${k}" aria-pressed="${k===cur}"><b>${v}</b><small>${c[k]&&c[k].caption?(c[k].src===capSrc()?'Ready':'Older write-up'):'Write with AI'}</small></button>`).join(''); }
 function capSay(m,cls){ const el=$('capStatus'); el.className='status'+(cls&&cls!=='busy'?' '+cls:''); el.innerHTML=''; if(cls==='busy'){ el.innerHTML='<span class="spin"></span> '; el.append(m); } else el.textContent=m; }
-function capPrompt(lang,withPost){ const wa=state.text.whatsapp||'+91 63527 76505';
+function capPrompt(lang,withPost,st){ st=st||state; const wa=st.text.whatsapp||'+91 63527 76505';
   return `You write social media captions for PARCO Engineering Corporation, Ahmedabad (since 1971), an importer and distributor of spare parts for heavy earthmoving equipment, transit mixers, concrete pumps and industrial DG sets.
 Rules:
 - Enquiry-only marketing: never mention prices, discounts, offers or "buy now". Drive WhatsApp enquiries.
 - Use only facts from the write-up. Never invent specifications, part numbers or stock claims.
 - Language: ${lang}. ${LANG_NOTE[lang]||''}
 - Always keep part names, brand names, machine names and part numbers in English (Latin letters).
-- Tone: ${state.tone}.
-Product name: ${state.product||'(not given)'}
+- Tone: ${st.tone}.
+Product name: ${st.product||'(not given)'}
 Write-up:
 """
-${state.writeup}
+${st.writeup}
 """
 Return only a JSON object:
 "caption": Instagram/Facebook caption, 50 to 110 words, 2-3 short paragraphs, ending with a line inviting WhatsApp enquiries on ${wa}
 "hashtags": 10 to 14 hashtags in one string separated by spaces, always including #PARCO
 "whatsapp": WhatsApp Status text, at most 45 words, ending with ${wa}`+(withPost?`
-"post": the text on the image in ${lang}: {"eyebrow": at most 18 characters, "headline": at most 22 characters, "subhead": at most 40 characters, "category": at most 26 characters, "cta": at most 22 characters, "bullets": array of ${Math.max(1,(state.text.bullets||[]).length)} lines of at most 34 characters}. Current text: ${JSON.stringify(postSnap())}`:''); }
+"post": the text on the image in ${lang}: {"eyebrow": at most 18 characters, "headline": at most 22 characters, "subhead": at most 40 characters, "category": at most 26 characters, "cta": at most 22 characters, "bullets": array of ${Math.max(1,(st.text.bullets||[]).length)} lines of at most 34 characters}. Current text: ${JSON.stringify(postSnap())}`:''); }
 async function pickCapLang(l,force){
   if(capBusy||!CAP_LANGS[l]) return; keepCap(); const from=state.capLang, withPost=$('capPost').checked, c=capStore();
   if(withPost&&from!==l) c[from].post=postSnap();
@@ -2485,7 +2504,7 @@ $('ideasBtn').onclick=()=>{ ideaSeen=[]; showIdeas(); }; $('ideasMore').onclick=
 $('newPost').onclick=()=>{
   const o=state; const n=exampleState();
   Object.assign(n,{footStyle:o.footStyle,look:o.look,sizes:{...o.sizes},fonts:{...o.fonts},format:o.format,template:o.template,theme:o.theme,colors:{...o.colors},show:{...o.show},wm:{...o.wm},wa:{...o.wa},lang:o.lang,tone:o.tone,textScale:o.textScale,brandLogo:o.brandLogo,brandImg:o.brandImg,bgPhoto:o.bgPhoto,
-    product:'',writeup:'',caption:'',hashtags:DEFAULT_TAGS,waText:'',photos:[],offsets:{},decos:{},extra:{},texts:{},captions:{},capLang:'',specs:[{k:'Brand',v:''},{k:'Part No.',v:''},{k:'Application',v:''}],badges:o.badges.map(b=>({...b}))});
+    product:'',writeup:'',caption:'',hashtags:DEFAULT_TAGS,waText:'',photos:[],offsets:{},decos:{},extra:{},texts:{},captions:{},capLang:'',scheduledAt:null,draft:false,specs:[{k:'Brand',v:''},{k:'Part No.',v:''},{k:'Application',v:''}],badges:o.badges.map(b=>({...b}))});
   const keep=['since','values','sidetag','tagline','phones','whatsapp','email','web','address','cta','category','compat'];
   n.text={eyebrow:'',headline:'',sub:'',bullets:[]}; keep.forEach(k=>n.text[k]=o.text[k]);
   state=n; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); $('t-write').click(); $('product').focus();
@@ -2525,7 +2544,7 @@ function renderLib(){
   posts.forEach(p=>{ const card=document.createElement('article'); card.className='card'; const d=new Date(p.updatedAt||0);
     card.innerHTML=`<div class="th">${p.thumb?'<img alt="">':''}</div><div class="meta"><b></b><span></span></div><div class="ops"><button type="button" class="btn sm primary" data-open>Open</button><button type="button" class="btn sm" data-copy>Make a copy</button><button type="button" class="btn sm danger" data-rm>Delete</button></div>`;
     if(p.thumb) card.querySelector('img').src=p.thumb; card.querySelector('b').textContent=p.title||'Untitled post';
-    card.querySelector('.meta span').textContent=`${TEMPLATES[p.template]?.name||''} · ${FORMATS[p.format]?.label||''} · ${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
+    card.querySelector('.meta span').textContent=(p.scheduledAt?`📅 ${new Date(p.scheduledAt+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}${p.draft?' · Draft':''} · `:'')+`${TEMPLATES[p.template]?.name||''} · ${FORMATS[p.format]?.label||''} · ${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
     card.querySelector('[data-open]').onclick=()=>openPost(p,false); card.querySelector('[data-copy]').onclick=()=>openPost(p,true);
     const rm=card.querySelector('[data-rm]'); let armed=0;
     rm.onclick=async()=>{ if(!armed){ rm.textContent='Tap again to delete'; armed=setTimeout(()=>{ armed=0; rm.textContent='Delete'; },4000); return; }
@@ -2555,20 +2574,124 @@ async function serPhoto(p,png){
   return {...base,assetId:p.assetId,png:!!(png||p.png)};
 }
 function makeThumb(){ const f=FORMATS[state.format], tw=260, sc=tw/f.w; const c=document.createElement('canvas'); c.width=tw; c.height=Math.round(f.h*sc); const x=c.getContext('2d'); x.setTransform(sc,0,0,sc,0,0); renderPost(x,f.w,f.h,state,false); return c.toDataURL('image/jpeg',0.72); }
+// saves the current state (new or update); returns how many images could not be stored
+async function saveCurrent(extra){
+  let skipped=0; const photos=[];
+  for(const p of state.photos){ try{ photos.push(await serPhoto(p)); }catch{ skipped++; } }
+  let bg=null, br=null; try{ bg=await serPhoto(state.bgPhoto); }catch{ skipped++; } try{ br=await serPhoto(state.brandImg,true); }catch{ skipped++; }
+  keepCap(); const doc={title:state.text.headline||'Untitled post',updatedAt:Date.now(),format:state.format,template:state.template,theme:state.theme,colors:{...state.colors},show:{...state.show},wm:{...state.wm},wa:{...state.wa},offsets:JSON.parse(JSON.stringify(state.offsets||{})),decos:JSON.parse(JSON.stringify(state.decos||{})),texts:JSON.parse(JSON.stringify(state.texts||{})),extra:JSON.parse(JSON.stringify(state.extra||{})),
+    brandLogo:state.brandLogo,textScale:state.textScale,look:state.look,footStyle:state.footStyle||'auto',sizes:{...state.sizes},fonts:{...state.fonts},product:state.product,writeup:state.writeup,lang:state.lang,tone:state.tone,text:{...state.text,bullets:bulletsList()},
+    specs:specList().map(r=>({k:r.k||'',v:r.v||''})),badges:state.badges.map(b=>({icon:b.icon,label:b.label||''})),caption:state.caption,hashtags:state.hashtags,waText:state.waText,captions:JSON.parse(JSON.stringify(state.captions||{})),capLang:state.capLang||'',
+    photos,bgPhoto:bg,brandImg:br,thumb:makeThumb(),scheduledAt:state.scheduledAt||null,draft:false,...(extra||{})};
+  if(state.libId) await db.collection('posts').doc(state.libId).set(doc); else { const ref=await db.collection('posts').add(doc); state.libId=ref.id; }
+  return skipped;
+}
 $('save').onclick=async()=>{
   if(!db) return; const btn=$('save'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Saving';
-  try{ let skipped=0; const photos=[];
-    for(const p of state.photos){ try{ photos.push(await serPhoto(p)); }catch{ skipped++; } }
-    let bg=null, br=null; try{ bg=await serPhoto(state.bgPhoto); }catch{ skipped++; } try{ br=await serPhoto(state.brandImg,true); }catch{ skipped++; }
-    keepCap(); const doc={title:state.text.headline||'Untitled post',updatedAt:Date.now(),format:state.format,template:state.template,theme:state.theme,colors:{...state.colors},show:{...state.show},wm:{...state.wm},wa:{...state.wa},offsets:JSON.parse(JSON.stringify(state.offsets||{})),decos:JSON.parse(JSON.stringify(state.decos||{})),texts:JSON.parse(JSON.stringify(state.texts||{})),extra:JSON.parse(JSON.stringify(state.extra||{})),
-      brandLogo:state.brandLogo,textScale:state.textScale,look:state.look,footStyle:state.footStyle||'auto',sizes:{...state.sizes},fonts:{...state.fonts},product:state.product,writeup:state.writeup,lang:state.lang,tone:state.tone,text:{...state.text,bullets:bulletsList()},
-      specs:specList().map(r=>({k:r.k||'',v:r.v||''})),badges:state.badges.map(b=>({icon:b.icon,label:b.label||''})),caption:state.caption,hashtags:state.hashtags,waText:state.waText,captions:JSON.parse(JSON.stringify(state.captions||{})),capLang:state.capLang||'',
-      photos,bgPhoto:bg,brandImg:br,thumb:makeThumb()};
-    if(state.libId) await db.collection('posts').doc(state.libId).set(doc); else { const ref=await db.collection('posts').add(doc); state.libId=ref.id; }
+  try{ const skipped=await saveCurrent();
     toast(skipped?`Saved. ${skipped} image(s) could not be stored; add them again before downloading later.`:'Saved to library');
   }catch(e){ toast('Could not save: '+((e&&e.message)||'try again')); }
   finally{ btn.disabled=false; btn.textContent=state.libId?'Update saved post':'Save to library'; updateEditing(); }
 };
+
+/* ---------- week of posts (content calendar): plan with one AI call, captions one post at a time, no auto-posting ---------- */
+const WEEK_ANGLES=['stock','fitment','brand story','dealer enquiry','new range'], WEEK_TPLS=Object.keys(TEMPLATES).filter(k=>TEMPLATES[k].n===1);
+const WEEK_PACE={gap:3000,wait:20000}; // pause between caption calls, and after a rate-limit reply
+let WK=null; // {lang,tone,entries:[{date,product,writeup,angle,template,text,specs,photo,sample,caption,hashtags,whatsapp,libId}]}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const STOCK_RE=/ready[\s-]*stock|in stock/i;
+const noPrice=(s,src)=>{ s=typeof s==='string'?s.trim():''; return PRICE_RE.test(s)||(src!==undefined&&STOCK_RE.test(s)&&!STOCK_RE.test(src))?'':s; };
+function parseProducts(t){ return String(t||'').split('\n').map(l=>l.trim()).filter(Boolean).slice(0,12).map(l=>{ const m=l.match(/^(.+?)\s*(?::|\s[-–—]\s)\s*(.+)$/); return m?{name:m[1].trim(),writeup:m[2].trim()}:{name:l,writeup:l}; }); }
+function isoDay(d){ return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); }
+function addDays(iso,n){ const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return isoDay(d); }
+const dayName=iso=>new Date(iso+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+// a real photo whose name matches the product, else a sample photo (flagged)
+function weekPhoto(name,i){ const stem=w=>w.replace(/s$/,''), words=normWords(name).filter(w=>w.length>2).map(stem), hit=lbl=>{ const L=normWords(lbl).map(stem); return words.filter(w=>L.includes(w)).length; };
+  const own=state.photos.filter(p=>!p.sampleKey&&hit(p.label)>0).sort((a,b)=>hit(b.label)-hit(a.label))[0]; if(own) return {photo:own,sample:false};
+  const keys=Object.keys(ASSETS.photos), need=Math.min(2,words.length), named=keys.filter(k=>hit(ASSETS.photos[k].label)>=need).sort((a,b)=>hit(ASSETS.photos[b].label)-hit(ASSETS.photos[a].label))[0];
+  const k=named||SAMPLE_FILL[i%SAMPLE_FILL.length]; return {photo:SAMPLE_PH.find(p=>p.sampleKey===k)||null,sampleKey:k,sample:true}; }
+function weekPrompt(prods,n,start,lang,tone){
+  return `You plan a week of social media posts for PARCO Engineering Corporation, Ahmedabad (since 1971), an importer and distributor of spare parts for heavy earthmoving equipment, transit mixers, concrete pumps and industrial DG sets. Buyers are contractors, equipment owners, dealers and mechanics across India.
+Rules:
+- Enquiry-only marketing: never mention prices, discounts, offers or "buy now". Drive WhatsApp enquiries.
+- Use only facts from each product's write-up. Never invent specifications, part numbers or stock claims.
+- Angles: ${WEEK_ANGLES.join(', ')}. Use "stock" only if that product's write-up mentions stock, and "new range" only if it says the product is new. Vary angles and spread the products across the week.
+- Language: ${lang}. ${LANG_NOTE[lang]||''} Keep part names, brand names, machine names and part numbers in English.
+- Tone: ${tone}.
+Products (name: write-up):
+${prods.map((p,i)=>`${i+1}. ${p.name}: ${p.writeup}`).join('\n')}
+Plan ${n} posts, one per day, day 1 is ${start}.
+Templates (use the key): ${WEEK_TPLS.map(k=>`${k} (${TEMPLATES[k].note})`).join('; ')}
+Return only JSON: {"posts":[{"day":1,"product":"product name exactly as listed","angle":"one of the angles","template":"key","eyebrow":"at most 18 characters","headline":"at most 22 characters","subhead":"at most 40 characters","category":"at most 26 characters","compat":"machine brands from the write-up separated by \\" | \\", or \\"\\"","cta":"at most 22 characters","bullets":["up to 3 lines of at most 34 characters"],"specs":[{"label":"","value":""}]}]} with exactly ${n} posts.`; }
+function cleanWeek(r,prods,n,start){ const byName=new Map(prods.map(p=>[p.name.toLowerCase(),p])); let i=0;
+  return (Array.isArray(r&&r.posts)?r.posts:[]).filter(x=>x&&byName.has(String(x.product||'').trim().toLowerCase())).sort((a,b)=>(+a.day||0)-(+b.day||0)).slice(0,n).map(x=>{ const p=byName.get(String(x.product).trim().toLowerCase()), ph=weekPhoto(p.name,i), k=i++;
+    return {date:addDays(start,k),product:p.name,writeup:p.writeup,angle:WEEK_ANGLES.includes(x.angle)?x.angle:'fitment',template:WEEK_TPLS.includes(x.template)?x.template:WEEK_TPLS[k%WEEK_TPLS.length],
+      text:{eyebrow:noPrice(x.eyebrow,p.writeup),headline:noPrice(x.headline,p.writeup)||p.name.slice(0,22),sub:noPrice(x.subhead,p.writeup),category:noPrice(x.category,p.writeup),compat:noPrice(x.compat),cta:noPrice(x.cta,p.writeup)||'Enquire on WhatsApp',bullets:(Array.isArray(x.bullets)?x.bullets:[]).map(t=>noPrice(t,p.writeup)).filter(Boolean).slice(0,3)},
+      specs:(Array.isArray(x.specs)?x.specs:[]).slice(0,4).map(s=>({k:noPrice(s&&s.label),v:noPrice(s&&s.value)})).filter(s=>s.k&&s.v),...ph,caption:'',hashtags:'',whatsapp:'',libId:null}; }); }
+// a full post state for one calendar entry; brand, look and contact details come from the current post
+function weekState(e){ const o=state, n=exampleState(), stock=STOCK_RE.test(e.writeup);
+  Object.assign(n,{format:o.format,template:e.template,look:o.look,theme:o.theme,colors:{...o.colors},fonts:{...o.fonts},footStyle:o.footStyle,show:{...o.show},wm:{...o.wm},wa:{...o.wa},sizes:{...o.sizes},textScale:o.textScale,brandLogo:o.brandLogo,brandImg:o.brandImg,
+    product:e.product,writeup:e.writeup,lang:WK.lang,tone:WK.tone,photos:e.photo?[e.photo]:[],specs:e.specs.map(s=>({...s})),badges:o.badges.filter(b=>stock||!/stock/i.test(b.label||'')).map(b=>({...b})),
+    caption:e.caption,hashtags:e.hashtags||DEFAULT_TAGS,waText:e.whatsapp,capLang:WK.lang,captions:e.caption?{[WK.lang]:{caption:e.caption,hashtags:e.hashtags,whatsapp:e.whatsapp,src:e.product+'|'+e.writeup}}:{},libId:e.libId,scheduledAt:e.date});
+  n.text={...o.text,...e.text,bullets:[...e.text.bullets]}; return n; }
+function renderBlob(st,fmt){ const f=FORMATS[fmt], c=document.createElement('canvas'); c.width=f.w; c.height=f.h; renderPost(c.getContext('2d'),f.w,f.h,{...st,format:fmt},false); return new Promise(r=>c.toBlob(r,'image/png')); }
+function wkSay(m,cls){ const el=$('wkMsg'); el.className='status'+(cls&&cls!=='busy'?' '+cls:''); el.innerHTML=''; if(cls==='busy'){ el.innerHTML='<span class="spin"></span> '; el.append(m); } else el.textContent=m; }
+function paintWeek(){ const box=$('wkCal'); box.innerHTML=''; $('wkActs').hidden=!(WK&&WK.entries.length); if(!WK) return;
+  WK.entries.forEach((e,i)=>{ const row=document.createElement('div'); row.className='wk-row'+(e.sample?' wk-sample':''); const cv2=document.createElement('canvas'), f=FORMATS.square, tw=150, sc=tw/f.w; cv2.width=tw; cv2.height=tw; const x=cv2.getContext('2d'); x.setTransform(sc,0,0,sc,0,0); renderPost(x,f.w,f.h,{...weekState(e),format:'square'},false);
+    row.innerHTML=`<div class="wk-info"><b>${esc(dayName(e.date))} · ${esc(e.product)}</b><span class="wk-chip">${esc(e.angle)}</span><span class="wk-chip">${esc(TEMPLATES[e.template].name)}</span><small>${esc(e.text.headline)}${e.text.sub?' · '+esc(e.text.sub):''}</small>${e.sample?'<small class="wk-flag">Sample photo used: add the real product photo</small>':''}<small>${e.caption?'Caption written':'Caption not written yet'}${e.libId?' · Saved as draft':''}</small><div class="wk-ops"><label class="btn sm" for="wkPh${i}">${e.sample?'Add photo':'Change photo'}</label><input type="file" id="wkPh${i}" class="vis-hide" accept="image/*" data-wkph="${i}"><button type="button" class="btn sm" data-wkcap="${i}">${e.caption?'Write caption again':'Write caption'}</button></div></div>`;
+    row.prepend(cv2); box.append(row); }); }
+async function weekCaption(e){ const sample=await cap.sample; if(!sample) throw Object.assign(new Error('AI is off. Tap ✦ AI settings and add your key.'),{code:'no_key'});
+  const r=await sample.json(capPrompt(WK.lang,false,weekState(e)),{modelTier:'default',cache:false}); const str=v=>typeof v==='string'?v.trim():'';
+  if(!r||!str(r.caption)) throw Object.assign(new Error('The AI reply had no caption.'),{code:'bad_response'});
+  e.caption=str(r.caption); e.hashtags=str(r.hashtags)||DEFAULT_TAGS; e.whatsapp=str(r.whatsapp);
+  if(e.libId) await LOCAL.db.collection('posts').doc(e.libId).update({caption:e.caption,hashtags:e.hashtags,waText:e.whatsapp,capLang:WK.lang,captions:{[WK.lang]:{caption:e.caption,hashtags:e.hashtags,whatsapp:e.whatsapp,src:e.product+'|'+e.writeup}},updatedAt:Date.now()}); }
+async function weekCaptions(list){ let n=0; const todo=list.filter(e=>!e.caption);
+  for(const e of todo){ if(n++) await sleep(WEEK_PACE.gap); wkSay(`Writing caption ${n} of ${todo.length} (${e.product})…`,'busy');
+    try{ await weekCaption(e); }catch(err){ if(err&&err.code==='rate_limited'){ wkSay(`The AI is busy; waiting ${Math.round(WEEK_PACE.wait/1000)} seconds…`,'busy'); await sleep(WEEK_PACE.wait); await weekCaption(e); } else throw err; }
+    paintWeek(); } return todo.length; }
+let wkBusy=false;
+async function wkRun(fn){ if(wkBusy) return; wkBusy=true; document.querySelectorAll('#weekModal button').forEach(b=>{ if(b.id!=='wkClose') b.disabled=true; });
+  try{ await fn(); }catch(e){ const code=e&&e.code; wkSay(code==='rate_limited'?'Too many requests just now. Wait a minute and try again; finished posts are kept.':(e&&e.message)||'Something went wrong. Try again.','warn'); }
+  finally{ wkBusy=false; document.querySelectorAll('#weekModal button').forEach(b=>b.disabled=false); } }
+async function saveWeekDrafts(){ const keep=state; let skipped=0;
+  try{ for(let i=0;i<WK.entries.length;i++){ const e=WK.entries[i]; wkSay(`Saving draft ${i+1} of ${WK.entries.length}…`,'busy'); state=S=weekState(e); skipped+=await saveCurrent({scheduledAt:e.date,draft:true}); e.libId=state.libId; } }
+  finally{ state=S=keep; render(); } paintWeek(); return skipped; }
+// minimal ZIP (stored, no compression) so the export is one file
+const CRC_T=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(u){ let c=0xFFFFFFFF; for(let i=0;i<u.length;i++) c=CRC_T[(c^u[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+async function makeZip(files){ const enc=new TextEncoder(), parts=[], central=[]; let off=0;
+  for(const f of files){ const data=new Uint8Array(await f.blob.arrayBuffer()), name=enc.encode(f.name), crc=crc32(data), h=new DataView(new ArrayBuffer(30)), c=new DataView(new ArrayBuffer(46));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(12,0x21,true); h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,name.length,true);
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(14,0x21,true); c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,name.length,true); c.setUint32(42,off,true);
+    parts.push(h,name,data); central.push(c,name); off+=30+name.length+data.length; }
+  const size=central.reduce((s,x)=>s+x.byteLength,0), e=new DataView(new ArrayBuffer(22)); e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,size,true); e.setUint32(16,off,true);
+  return new Blob([...parts,...central,e],{type:'application/zip'}); }
+const csvCell=v=>{ v=String(v??''); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+async function exportWeek(){ const files=[], rows=[['date','day','product','angle','template','headline','caption','hashtags','whatsapp','sample_photo','files']];
+  for(let i=0;i<WK.entries.length;i++){ const e=WK.entries[i], st=weekState(e), base=`${e.date}-${slug(e.product)}`; wkSay(`Drawing post ${i+1} of ${WK.entries.length}…`,'busy'); await scriptFonts(st);
+    for(const fmt of Object.keys(FORMATS)) files.push({name:`${base}-${fmt}.png`,blob:await renderBlob(st,fmt)});
+    rows.push([e.date,new Date(e.date+'T12:00:00').toLocaleDateString('en-IN',{weekday:'long'}),e.product,e.angle,TEMPLATES[e.template].name,e.text.headline,e.caption,e.hashtags,e.whatsapp,e.sample?'yes':'no',Object.keys(FORMATS).map(f=>`${base}-${f}.png`).join(' ')]); }
+  files.push({name:'captions.csv',blob:new Blob(['﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv'})});
+  await LOCAL.downloads.save({filename:`parco-week-${WK.entries[0].date}.zip`,data:await makeZip(files)}); }
+(function(){ const sel=$('wkTone'); sel.innerHTML=$('tone').innerHTML;
+  $('weekBtn').onclick=()=>{ if(!$('wkList').value.trim()&&(state.product||state.writeup)) $('wkList').value=`${state.product||state.text.headline}: ${state.writeup}`.trim();
+    if(!$('wkStart').value) $('wkStart').value=addDays(isoDay(new Date()),1); $('wkLang').value=state.lang; $('wkTone').value=state.tone; $('weekModal').hidden=false; paintWeek(); };
+  $('wkClose').onclick=()=>{ $('weekModal').hidden=true; };
+  $('wkPlan').onclick=()=>wkRun(async()=>{ const prods=parseProducts($('wkList').value); if(!prods.length){ wkSay('Paste at least one product, one per line.','warn'); return; }
+    const sample=await cap.sample; if(!sample){ wkSay('AI is off. Tap ✦ AI settings and add your key to plan a week.','warn'); return; }
+    const n=+$('wkN').value, start=$('wkStart').value||addDays(isoDay(new Date()),1), lang=$('wkLang').value, tone=$('wkTone').value; wkSay('Planning the week…','busy');
+    const r=await sample.json(weekPrompt(prods,n,start,lang,tone),{modelTier:'default',cache:false}); const entries=cleanWeek(r,prods,n,start);
+    for(const e of entries) if(!e.photo&&e.sampleKey){ const P=ASSETS.photos[e.sampleKey]; try{ e.photo=await makePhoto({src:P.src,label:P.label,sampleKey:e.sampleKey}); }catch{} }
+    if(!entries.length){ wkSay('The AI plan did not match the product list. Try again.','warn'); return; }
+    WK={lang,tone,entries}; paintWeek(); const s=entries.filter(e=>e.sample).length;
+    wkSay(`${entries.length} posts planned.${s?` ${s} use a sample photo (marked); add the real photo where you can.`:''} Captions are written one post at a time when you ask.`,s?'warn':'ok'); });
+  $('wkDrafts').onclick=()=>wkRun(async()=>{ const sk=await saveWeekDrafts(); wkSay(`Saved ${WK.entries.length} drafts to the library with their dates.${sk?` ${sk} image(s) could not be stored.`:''}`,'ok'); });
+  $('wkCaps').onclick=()=>wkRun(async()=>{ const n=await weekCaptions(WK.entries); wkSay(n?`Wrote ${n} caption${n>1?'s':''}.`:'All captions are written.','ok'); });
+  $('wkExport').onclick=()=>wkRun(async()=>{ const miss=WK.entries.filter(e=>!e.caption).length; if(miss) await weekCaptions(WK.entries); await exportWeek(); wkSay('Exported a ZIP with every post in 3 sizes and captions.csv. Nothing was posted.','ok'); });
+  $('wkCal').addEventListener('click',e=>{ const b=e.target.closest('[data-wkcap]'); if(!b) return; const en=WK.entries[+b.dataset.wkcap]; en.caption=''; wkRun(async()=>{ await weekCaptions([en]); wkSay(`Caption written for ${en.product}.`,'ok'); }); });
+  $('wkCal').addEventListener('change',async e=>{ const i=e.target.dataset.wkph; if(i===undefined) return; const f=e.target.files[0]; if(!f) return; const en=WK.entries[+i];
+    try{ en.photo=await makePhoto({src:URL.createObjectURL(f),label:en.product,png:f.type==='image/png'}); en.sample=false; delete en.sampleKey; if(en.libId){ const keep=state; try{ state=S=weekState(en); await saveCurrent({scheduledAt:en.date,draft:true}); } finally{ state=S=keep; render(); } } paintWeek(); }catch{ toast('That photo could not be opened.'); } });
+})();
 
 /* ---------- background removal ---------- */
 const ORT_URL='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgl.min.js', MODEL_URL='models/u2netp.txt', ORT_WASM='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.bundle.min.mjs', SIL_PARTS=['models/silueta.0.txt','models/silueta.1.txt','models/silueta.2.txt'];
