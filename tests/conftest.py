@@ -67,6 +67,8 @@ def page(browser, base_url, ai):
     ctx.add_init_script("localStorage.setItem('parco-ai-v1', JSON.stringify({provider:'gemini', key:'test-key', model:''}))")
     ctx.route("https://generativelanguage.googleapis.com/**", ai.route)
     ctx.route("https://api.anthropic.com/**", lambda r: r.abort())
+    # the live config.js turns on team sign-in; tests run signed-out with no accounts
+    ctx.route("**/config.js", lambda r: r.fulfill(status=200, content_type="application/javascript", body="window.PARCO_CONFIG={users:[]};"))
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))

@@ -88,7 +88,7 @@ def test_translate_post_text_renders_and_fits(page, ai):
             for fmt in FORMATS:
                 set_format(page, fmt)
                 W, H = page.evaluate(f"() => [FORMATS['{fmt}'].w, FORMATS['{fmt}'].h]")
-                rects = page.evaluate("() => hitRects.filter(h=>h.kind==='el').map(h=>({id:h.id,...h.r}))")
+                rects = page.evaluate("() => hitRects.filter(h=>h.kind==='el'&&!h.id.startsWith('deco_')).map(h=>({id:h.id,...h.r}))")  # design shapes may bleed off the edge
                 assert rects
                 for r in rects:  # every text item stays on the post
                     assert r["x"] >= -4 and r["x"] + r["w"] <= W + 4 and r["y"] >= -4 and r["y"] + r["h"] <= H + 4, (lang, tpl, fmt, r)
