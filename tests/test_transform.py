@@ -282,7 +282,13 @@ def test_text_box_width_handle(page):
 def test_everything_rotates_and_cards_only_grow(page):
     pick(page, "duoCards", "headline")
     assert page.evaluate("() => selHandles(selRect()).L.some(k=>k.kind==='rot')")
-    assert not page.evaluate("() => selHandles(selRect()).L.some(k=>k.kind==='side')")
+    # every part now has side handles: the headline stretches wider without moving its left edge
+    q0 = quad(page)
+    hx, hy = handle(page, "side", 1, 0)
+    drag(page, (hx, hy), (hx + 80, hy))
+    assert off(page, "headline")["sx"] > 1.05
+    q1 = quad(page)
+    assert abs(q1[0][0] - q0[0][0]) <= 2
     pick(page, "duoCards", "card")
     hx, hy = handle(page, "side", 1, 0)
     drag(page, (hx, hy), (hx - 120, hy))
@@ -340,3 +346,38 @@ def test_old_post_upgrade_keeps_tags_in_place(page):
         for k in want:
             for a in "xywh":
                 assert abs(got[k][a] - want[k][a]) <= 1.5, (tpl, k, a, got[k], want[k])
+
+
+def test_small_parts_get_side_handles_outside_and_still_move(page):
+    pick(page, "brandHero", "phoneicon")
+    f = page.evaluate("() => { const F=selFrame(selRect()); return [F.w,F.h]; }")
+    sides = page.evaluate("() => selHandles(selRect()).L.filter(k=>k.kind==='side').length")
+    assert sides == 4
+    # pressing in the middle of the small icon moves it rather than grabbing a handle
+    c = page.evaluate("() => { const F=selFrame(selRect()); return [F.c.x,F.c.y]; }")
+    assert not page.evaluate("([x,y]) => !!handleAt({x,y})", c)
+    hx, hy = handle(page, "side", 1, 0)
+    drag(page, (hx, hy), (hx + 40, hy))
+    assert off(page, "phoneicon")["sx"] > 1.2
+
+
+def test_photo_stretch_or_crop(page):
+    pick(page, "showcase", "photo0")
+    assert page.is_visible("#selStretch") and page.is_visible("#selCrop")
+    assert page.get_attribute("#selStretch", "aria-pressed") == "true"
+    q0 = quad(page)
+    hx, hy = handle(page, "side", 1, 0)
+    drag(page, (hx, hy), (hx + 100, hy))
+    o = off(page, "photo0")
+    assert o.get("warp") is True and o["sx"] > 1.1 and not o.get("crop")
+    q1 = quad(page)
+    assert (q1[1][0] - q1[0][0]) > (q0[1][0] - q0[0][0]) + 70   # the photo itself got wider
+    page.click("#selCrop")
+    assert page.get_attribute("#selCrop", "aria-pressed") == "true" and page.get_attribute("#selStretch", "aria-pressed") == "false"
+    hx, hy = handle(page, "side", -1, 0)
+    sx = off(page, "photo0")["sx"]
+    drag(page, (hx, hy), (hx + 60, hy))
+    o = off(page, "photo0")
+    assert o["crop"]["l"] > 0.02 and o["sx"] == sx
+    page.click("#selStretch")
+    assert page.get_attribute("#selStretch", "aria-pressed") == "true"

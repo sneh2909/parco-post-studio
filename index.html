@@ -174,6 +174,14 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
 .tb-presets{display:flex;flex-wrap:wrap;gap:6px}
 .tb-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;width:100%}
 .tb-ctl textarea{min-height:56px}
+.ts-ctl{border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.ts-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;width:100%}
+.ts-words{display:flex;flex-wrap:wrap;gap:6px;width:100%;max-height:150px;overflow:auto}
+.ts-words button{border:1px solid var(--line);background:var(--panel-2);color:var(--ink);border-radius:8px;padding:5px 9px;font-size:13.5px;cursor:pointer;min-height:34px}
+.ts-words button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ts-words .ts-all{color:var(--muted)}
+.ts-tools button{min-width:42px;justify-content:center;min-height:36px}
+.ts-sm{flex:0 1 140px}
 .deco-b:hover{border-color:var(--blue);color:var(--ink)}
 .deco-b canvas{width:56px;height:42px;display:block;border-radius:6px;background:#ffffff}
 .cut{width:min(900px,100%)}
@@ -521,7 +529,23 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
         <div class="grp" id="tbAlign"><button type="button" data-al="left">Left</button><button type="button" data-al="center">Centre</button><button type="button" data-al="right">Right</button></div>
         <div class="grp"><button type="button" id="tbBold"><b>B</b></button><button type="button" id="tbItal"><i style="background:none;padding:0;font-style:italic">I</i></button></div>
         <button class="btn sm" type="button" id="tbDup">Duplicate</button><button class="btn sm danger" type="button" id="tbDel">Delete</button>
-      </div><span id="decoCtl" hidden style="display:contents"><label class="f" style="flex:0 1 130px">Colour<select id="dcColor"></select></label><div class="rng" style="flex:1 1 200px"><span>Strength</span><input type="range" id="dcK" min="0.3" max="2.5" step="0.01"><output id="dcKo"></output></div><div class="rng" id="dcNWrap" style="flex:1 1 200px"><span>Amount</span><input type="range" id="dcN" min="0.4" max="2.5" step="0.01"><output id="dcNo"></output></div><div class="rng" style="flex:1 1 200px"><span>Fade</span><input type="range" id="dcOp" min="0.1" max="1" step="0.01"><output id="dcOpo"></output></div><div class="rng" style="flex:1 1 200px"><span>Rotate</span><input type="range" id="dcRot" min="-180" max="180" step="1"><output id="dcRoto"></output></div><button class="btn sm" type="button" id="dcLayer">Send behind</button><button class="btn sm" type="button" id="dcDup">Duplicate</button><button class="btn sm danger" type="button" id="dcDel">Delete</button></span><button class="btn sm" type="button" id="selHide" hidden>Hide item</button><button class="btn sm" type="button" id="selCrop" hidden aria-pressed="false">✂ Crop photo</button><button class="btn sm" type="button" id="selUncrop" hidden>Remove crop</button><button class="btn sm" type="button" id="selReset" hidden>Reset this item</button><button class="btn sm" type="button" id="allReset">Reset layout</button></div>
+      </div>
+      <div id="tsCtl" hidden class="tb-ctl ts-ctl">
+        <div class="ts-head"><b>Text style</b><span class="aside" id="tsHint">Tap words to style only those. With no words picked, the whole text changes.</span></div>
+        <div class="ts-words" id="tsWords"></div>
+        <div class="grp ts-tools">
+          <button type="button" id="tsB" title="Bold"><b>B</b></button><button type="button" id="tsI" title="Italic"><span style="font-style:italic;font-family:serif">I</span></button><button type="button" id="tsU" title="Underline"><span style="text-decoration:underline">U</span></button><button type="button" id="tsS" title="Strikethrough"><span style="text-decoration:line-through">S</span></button><button type="button" id="tsSh" title="Shadow">Shadow</button>
+        </div>
+        <label class="f ts-sm">Case<select id="tsCase"><option value="">As typed</option><option value="upper">UPPERCASE</option><option value="lower">lowercase</option><option value="title">Title Case</option></select></label>
+        <label class="f ts-sm">Text colour<select id="tsColor"></select></label>
+        <label class="f ts-sm">Highlight<select id="tsHl"></select></label>
+        <label class="f ts-sm">Outline<select id="tsOut"></select></label>
+        <label class="f ts-sm">Glow<select id="tsGlow"></select></label>
+        <div class="rng" style="flex:1 1 170px"><span>Letter spacing</span><input type="range" id="tsLs" min="-0.05" max="0.4" step="0.01" value="0"><output id="tsLso">0</output></div>
+        <div class="rng" style="flex:1 1 170px"><span>See-through</span><input type="range" id="tsOp" min="0.15" max="1" step="0.01" value="1"><output id="tsOpo">100%</output></div>
+        <label class="f ts-sm">Quick style<select id="tsPreset"></select></label>
+        <div class="grp"><button type="button" id="tsCopy">Copy style</button><button type="button" id="tsPaste">Paste style</button><button type="button" id="tsClear">Clear style</button></div>
+      </div><span id="decoCtl" hidden style="display:contents"><label class="f" style="flex:0 1 130px">Colour<select id="dcColor"></select></label><div class="rng" style="flex:1 1 200px"><span>Strength</span><input type="range" id="dcK" min="0.3" max="2.5" step="0.01"><output id="dcKo"></output></div><div class="rng" id="dcNWrap" style="flex:1 1 200px"><span>Amount</span><input type="range" id="dcN" min="0.4" max="2.5" step="0.01"><output id="dcNo"></output></div><div class="rng" style="flex:1 1 200px"><span>Fade</span><input type="range" id="dcOp" min="0.1" max="1" step="0.01"><output id="dcOpo"></output></div><div class="rng" style="flex:1 1 200px"><span>Rotate</span><input type="range" id="dcRot" min="-180" max="180" step="1"><output id="dcRoto"></output></div><button class="btn sm" type="button" id="dcLayer">Send behind</button><button class="btn sm" type="button" id="dcDup">Duplicate</button><button class="btn sm danger" type="button" id="dcDel">Delete</button></span><button class="btn sm" type="button" id="selHide" hidden>Hide item</button><button class="btn sm" type="button" id="selStretch" hidden aria-pressed="true">↔ Stretch photo</button><button class="btn sm" type="button" id="selCrop" hidden aria-pressed="false">✂ Crop photo</button><button class="btn sm" type="button" id="selUncrop" hidden>Remove crop</button><button class="btn sm" type="button" id="selReset" hidden>Reset this item</button><button class="btn sm" type="button" id="allReset">Reset layout</button></div>
       <div class="mb-row" id="hiddenRow" hidden><span>Hidden:</span><div class="grp" id="hiddenList"></div></div>
     </div>
     <p class="hint">Manual changes are saved with this post only; templates stay as they are. Arrow keys nudge the selected item. Square for feed, 4:5 for Instagram, 9:16 for WhatsApp Status and Stories.</p>
@@ -654,13 +678,26 @@ const TEMPLATES = {
   quadGrid:   {name:'Quad Grid',   note:'Clean 2 × 2 cards', n:4, look:'classic'},
   quadFeature:{name:'Quad Polaroid',note:'Pinned photo prints with handwritten captions', n:4, look:'classic'},
   quadTags:   {name:'Quad Mosaic', note:'Magazine-style mosaic of four photos', n:4, look:'night'},
-  brandHero:  {name:'Brand Poster A',note:'Hero in the centre, side photo cards, feature cards', n:3, adapt:[1,2,3], look:'classic', brand:true},
-  brandSplit: {name:'Brand Poster B',note:'Big hero on the left, pills and feature cards on the right', n:3, adapt:[1,2,3], look:'classic', brand:true},
-  brandBand:  {name:'Brand Poster C',note:'Angled colour band, hero overlapping it, icon strip', n:3, adapt:[1,2,3], look:'classic', brand:true},
-  brandWall:  {name:'Brand Poster D',note:'Photo wall on top, dark panel with the details', n:3, adapt:[1,2,3], look:'classic', brand:true}
+  brandHero:  {name:'PARCO Classic',note:'Approved style: header band, centred headline, photo cards, feature cards', n:3, adapt:[1,2,3], look:'classic', brand:true, head:'Barlow Condensed'},
+  brandSplit: {name:'Side Panel',note:'Dark side column with logo, 1971 and features; headline on the right', n:3, adapt:[1,2,3], look:'classic', brand:true, head:'Oswald'},
+  brandBand:  {name:'Diagonal Ribbon',note:'Angled header, round 1971 seal, headline in a ribbon', n:3, adapt:[1,2,3], look:'classic', brand:true, head:'Teko'},
+  brandWall:  {name:'Photo First',note:'Photos on top, logo card and 1971 tag over a dark details panel', n:3, adapt:[1,2,3], look:'classic', brand:true, head:'Anton'}
 };
 function tplFits(t,n){ return (t.adapt||[t.n]).includes(n); }
-const LOOKS={classic:{name:'Classic',note:'White, indigo & orange',sw:['#ffffff','#2b3990','#f26522']},night:{name:'Night',note:'Deep indigo, amber glow',sw:['#141c4a','#1f74c9','#fbb412']},site:{name:'Site',note:'Catalog amber, black stripes',sw:['#fbb412','#111111','#f26522']}};
+const LOOKS={classic:{name:'Classic',note:'White, indigo & orange',sw:['#ffffff','#2b3990','#f26522']},night:{name:'Night',note:'Deep indigo, amber glow',sw:['#141c4a','#1f74c9','#fbb412']},site:{name:'Site',note:'Catalog amber, black stripes',sw:['#fbb412','#111111','#f26522']},
+  green:{name:'Forest green',note:'Mint background, deep green',sw:['#e3efe7','#164834','#f07828'],base:'classic',theme:'forest'},
+  greenNight:{name:'Green night',note:'Deep green, amber glow',sw:['#164834','#2e7d5b','#f6b02c'],base:'night',theme:'forest'},
+  navyLight:{name:'Navy',note:'Pale blue background, navy',sw:['#e6edf7','#0e2045','#f07828'],base:'classic',theme:'navy'},
+  tealLight:{name:'Teal',note:'Pale teal background, teal',sw:['#e4f1f0','#0f3d47','#f07828'],base:'classic',theme:'teal'},
+  maroonLight:{name:'Maroon',note:'Blush background, maroon & gold',sw:['#f6ebe9','#4a1520','#f6b02c'],base:'classic',theme:'maroon'},
+  blueprint:{name:'Blueprint',note:'Engineering drawing grid',sw:['#123a6b','#ffffff','#1f74c9'],base:'night'},
+  graphite:{name:'Graphite',note:'Brushed dark metal',sw:['#2b2f36','#0f1115','#f26522'],base:'night'},
+  carbon:{name:'Carbon',note:'Carbon-fibre weave',sw:['#16181c','#3a3d44','#fbb412'],base:'night'},
+  vivid:{name:'Vivid',note:'Bold blue gradient, glow',sw:['#1f74c9','#2b3990','#f26522'],base:'night'},
+  steel:{name:'Steel',note:'Tread plate, hazard stripe',sw:['#d5d9df','#111111','#fbb412'],base:'site'}};
+/* LOOK is the base look (classic / night / site) that every template's colours follow; LOOKV is the chosen look, whose background lookPaint() draws */
+function lookBase(k){ return (LOOKS[k]&&LOOKS[k].base)||k; }
+function lookTheme(k){ return (LOOKS[k]&&LOOKS[k].theme)||''; }
 const FONTS_ALL=["Barlow Condensed", "Barlow", "Oswald", "Anton", "Bebas Neue", "Archivo Black", "Teko", "Saira Condensed", "Rajdhani", "Russo One", "Exo 2", "Kanit", "Fjalla One", "Montserrat", "Poppins", "Roboto", "Mukta", "Chakra Petch", "Caveat", "Kaushan Script"];
 const FONTS_HEAD=FONTS_ALL, FONTS_BODY=FONTS_ALL;
 const SAMPLE_FILL=['cgp','pinbush','valve','roller','coupling','hydpumps'];
@@ -764,9 +801,9 @@ let ELSEEN=new Set();
    Transform order: move by dx,dy, then rotate and size around the box centre, so the template layout is untouched when nothing is set.
    opt.fit: fn(b) receives the stretched box and draws its own frame inside it, so photos keep their proportions while frames change shape.
    Without fit, sx/sy stretch the drawing itself (template shapes). opt.rot: extra rotation the item stores itself (added decorations use d.rot). */
-/* Every item can rotate; these can also be stretched with the side handles (text boxes: width only; cards: only larger). */
-const STRETCH_RE=/^(photo|deco_|add_|tb_|card|feat|pill|fstrip|label)/;
-function canStretch(id){ return STRETCH_RE.test(String(id||'')); }
+/* Every item can rotate and be stretched with the side handles (text boxes: width only; cards: only larger).
+   Photos stretch fully (o.warp: the picture itself changes shape) or crop (CROP_MODE). */
+function canStretch(id){ return !!String(id||''); }
 /* Crop: o.crop={l,t,r,b} insets (fractions of the frame). The frame is drawn in the inset box while photos are placed as if uncropped (PH_MAP). */
 let PH_MAP=null, EL_STACK=[], MIG=null;
 function relBox(R,from,to){ return {x:R.x+to.x-from.x,y:R.y+to.y-from.y,w:R.w+to.w-from.w,h:R.h+to.h-from.h}; }
@@ -776,19 +813,56 @@ function linInv(m){ const det=(m.a*m.d-m.b*m.c)||1; return {a:m.d/det,b:-m.b/det
 function toLocal(inv,v){ return inv?{x:inv.a*v.x+inv.c*v.y,y:inv.b*v.x+inv.d*v.y}:v; }
 function mapQuad(ctx,b){ const m=ctx.getTransform(); return [[b.x,b.y],[b.x+b.w,b.y],[b.x+b.w,b.y+b.h],[b.x,b.y+b.h]].map(([x,y])=>[m.a*x+m.c*y+m.e,m.b*x+m.d*y+m.f]); }
 function el(id,box,fn,opt){ const ctx=CUR_CTX; if(!ctx) return fn(box); ELSEEN.add(String(id).split('_')[0]); if(ELC[id]!==undefined){ ELC[id]++; id=id+'_'+ELC[id]; } else ELC[id]=0;
-  opt=opt||{}; const o=offFor(id)||{}; const dx=o.dx||0, dy=o.dy||0, sc=o.s||1, sx=o.sx||1, sy=o.sy||1, rot=(o.rot||0)+(opt.rot||0); let b=box;
+  opt=opt||{}; const o=offFor(id)||{}; const dx=o.dx||0, dy=o.dy||0, sc=o.s||1, sx=o.sx||1, sy=o.sy||1, rot=(o.rot||0)+(opt.rot||0); let b=box, warp=!!(opt.fit&&o.warp);
   const inv=collecting?linInv(ctx.getTransform()):null, pM=PH_MAP;
   ctx.save(); ctx.translate(dx,dy);
-  if(box){ const cx=box.x+box.w/2, cy=box.y+box.h/2, kx=opt.fit?1:sx, ky=opt.fit?1:sy;
+  if(box){ const cx=box.x+box.w/2, cy=box.y+box.h/2, kx=opt.fit&&!warp?1:sx, ky=opt.fit&&!warp?1:sy;
     if(rot||sc!==1||kx!==1||ky!==1){ ctx.translate(cx,cy); if(rot) ctx.rotate(rot*Math.PI/180); ctx.scale(sc*kx,sc*ky); ctx.translate(-cx,-cy); }
-    if(opt.fit&&(sx!==1||sy!==1)){ const w=box.w*sx, h=box.h*sy; b={x:cx-w/2,y:cy-h/2,w,h}; }
+    if(opt.fit&&!warp&&(sx!==1||sy!==1)){ const w=box.w*sx, h=box.h*sy; b={x:cx-w/2,y:cy-h/2,w,h}; }
     if(opt.fit){ const c=o.crop; PH_MAP=null; if(c&&(c.l||c.t||c.r||c.b)){ const full=b; b={x:full.x+full.w*(c.l||0),y:full.y+full.h*(c.t||0),w:full.w*(1-(c.l||0)-(c.r||0)),h:full.h*(1-(c.t||0)-(c.b||0))}; PH_MAP={from:b,to:full}; } } }
   if(o.hide) ctx.globalAlpha=0;
   if(collecting&&b&&ctx.globalAlpha>0) hitRects.push({kind:'el',id,r:mapRect(ctx,b),q:mapQuad(ctx,b),inv,fit:!!opt.fit});
   const pH=HEAD,pB=BODY,pS=SCRIPT; if(o.font){ const f=`'${o.font}','Noto Sans Gujarati','Noto Sans Devanagari',sans-serif`; HEAD=f; BODY=f; SCRIPT=f; }
   if(MIG&&box) MIG[id]={parent:EL_STACK[EL_STACK.length-1]||null,cx:box.x+box.w/2,cy:box.y+box.h/2};
-  EL_STACK.push(id);
-  try{ return fn(b); } finally{ EL_STACK.pop(); HEAD=pH; BODY=pB; SCRIPT=pS; PH_MAP=pM; ctx.restore(); } }
+  EL_STACK.push(id); const pT=TSTY; TSTY={id,ts:o.ts||null,n:0};
+  try{ return fn(b); } finally{ TSTY=pT; EL_STACK.pop(); HEAD=pH; BODY=pB; SCRIPT=pS; PH_MAP=pM; ctx.restore(); } }
+/* ---------- text styles (Word-like) ----------
+   o.ts = {all:{...}, w:{<word index>:{t:'WORD',...}}} in the offsets of every size of the template. Keys: b i u s (bold, italic, underline, strike),
+   color, hl (highlight), cs ('upper'|'lower'|'title'), ls (letter spacing, em), outline + ow (width, em), shadow, glow (colour), op (opacity).
+   Colours may be theme keys (ink, blue, pop, accent, paper) or '#hex'. Words are counted in drawing order inside one item, and a word style only applies
+   while the word is still the same text. Items without styles take the untouched canvas path, so they draw exactly as before. */
+const TS_KEYS=['b','i','u','s','color','hl','cs','ls','outline','ow','shadow','glow','op'];
+let TSTY=null, TXT_SEEN={};
+function tsCol(v){ if(!v) return null; if(v==='white') return '#ffffff'; if(v==='black') return '#111111'; return (S&&S.colors&&S.colors[v])||v; }
+function tsCase(t,cs){ return cs==='upper'?t.toUpperCase():cs==='lower'?t.toLowerCase():cs==='title'?t.toLowerCase().replace(/(^|[\s\-\/(])(\S)/g,(m,a,b)=>a+b.toUpperCase()):t; }
+function tsFont(base,st){ const m=/^(italic\s+|oblique\s+)?(?:normal\s+|small-caps\s+)*(\d+\s+|bold\s+|bolder\s+|lighter\s+)?(?:normal\s+|condensed\s+|expanded\s+|[a-z-]*condensed\s+|[a-z-]*expanded\s+)*([\d.]+)px(?:\s*\/\s*\S+)?\s+(.*)$/i.exec(base); if(!m) return {font:base,size:16};
+  const wt=(m[2]||'').trim(); let w=wt==='bold'||wt==='bolder'?700:wt==='lighter'?300:wt?+wt:400; if(st.b===true) w=w>=700?900:800; else if(st.b===false&&w>=700) w=500;
+  const it=st.i===true?true:st.i===false?false:!!m[1]; return {font:`${it?'italic ':''}${w} ${m[3]}px ${m[4]}`,size:+m[3]}; }
+const _FILLTEXT=CanvasRenderingContext2D.prototype.fillText;
+CanvasRenderingContext2D.prototype.fillText=function(t,x,y,mw){ const st=TSTY; if(!st||this!==CUR_CTX) return mw===undefined?_FILLTEXT.call(this,t,x,y):_FILLTEXT.call(this,t,x,y,mw);
+  const str=String(t), toks=[]; str.split(/(\s+)/).forEach(p=>{ if(!p) return; if(/^\s+$/.test(p)) toks.push({t:p,sp:true}); else toks.push({t:p,i:st.n++}); });
+  if(collecting){ const a=TXT_SEEN[st.id]||(TXT_SEEN[st.id]=[]); toks.forEach(k=>{ if(!k.sp) a.push({t:k.t,i:k.i}); }); }
+  if(!st.ts) return mw===undefined?_FILLTEXT.call(this,t,x,y):_FILLTEXT.call(this,t,x,y,mw);
+  return tsDraw(this,st.ts,toks,str,x,y,mw); };
+function tsDraw(ctx,ts,toks,str,x,y,mw){ const all=ts.all||{}, W=ts.w||{}, base=ctx.font, baseLS=ctx.letterSpacing, baseFill=ctx.fillStyle, al=ctx.textAlign;
+  const segs=toks.map(k=>{ const m=!k.sp&&W[k.i]; const st=m&&String(m.t||'').toUpperCase()===k.t.toUpperCase()?{...all,...m}:all; const f=tsFont(base,st); return {t:tsCase(k.t,st.cs),st,f}; });
+  let W0=ctx.measureText(str).width; if(mw!==undefined) W0=Math.min(W0,mw);
+  let W1=0; segs.forEach(g=>{ ctx.font=g.f.font; if('letterSpacing' in ctx) ctx.letterSpacing=g.st.ls!=null?(g.st.ls*g.f.size)+'px':baseLS; g.m=ctx.measureText(g.t); g.w=g.m.width; W1+=g.w; });
+  const k=W1>W0+0.5?W0/W1:1, x0=al==='center'?x-W1*k/2:(al==='right'||al==='end')?x-W1*k:x;
+  ctx.save(); ctx.translate(x0,y); ctx.scale(k,1); ctx.textAlign='left'; let cx=0;
+  segs.forEach(g=>{ const st=g.st, sz=g.f.size, m=g.m; ctx.font=g.f.font; if('letterSpacing' in ctx) ctx.letterSpacing=st.ls!=null?(st.ls*sz)+'px':baseLS;
+    const top=-m.fontBoundingBoxAscent, bot=m.fontBoundingBoxDescent, baseY=-m.alphabeticBaseline, op=st.op??1; ctx.save(); ctx.globalAlpha*=op;
+    if(st.hl){ ctx.fillStyle=tsCol(st.hl); const pad=sz*0.06; ctx.fillRect(cx-(g.t.trim()?pad:0),top+sz*0.06,g.w+(g.t.trim()?2*pad:0),bot-top-sz*0.12); }
+    const fill=st.color?tsCol(st.color):baseFill;
+    if(st.shadow){ ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=sz*0.16; ctx.shadowOffsetY=sz*0.06; }
+    if(st.glow){ ctx.save(); ctx.shadowColor=tsCol(st.glow); ctx.shadowBlur=sz*0.5; ctx.fillStyle=tsCol(st.glow); _FILLTEXT.call(ctx,g.t,cx,0); _FILLTEXT.call(ctx,g.t,cx,0); ctx.restore(); }
+    if(st.outline){ ctx.save(); ctx.lineJoin='round'; ctx.miterLimit=2; ctx.lineWidth=Math.max(1,sz*(st.ow||0.08)); ctx.strokeStyle=tsCol(st.outline); ctx.strokeText(g.t,cx,0); ctx.restore(); }
+    if(fill!=='transparent'){ ctx.fillStyle=fill; _FILLTEXT.call(ctx,g.t,cx,0); }
+    ctx.shadowColor='transparent'; const lc=fill==='transparent'?tsCol(st.outline)||baseFill:fill, th=Math.max(1.5,sz*0.065);
+    if(st.u&&g.t.trim()){ ctx.fillStyle=lc; ctx.fillRect(cx,baseY+sz*0.07,g.w,th); }
+    if(st.s&&g.t.trim()){ ctx.fillStyle=lc; ctx.fillRect(cx,baseY-sz*0.3,g.w,th); }
+    ctx.restore(); cx+=g.w; });
+  ctx.restore(); ctx.font=base; if('letterSpacing' in ctx) ctx.letterSpacing=baseLS; ctx.fillStyle=baseFill; }
 function deco(id,box,fn,opt){ return el('deco_'+id,box,fn,opt); }
 
 function drawLogo(ctx,img,x,y,h,align,chip){
@@ -1065,7 +1139,7 @@ function chipBlock(ctx,o,items,push){
 }
 
 /* ---------- design looks ---------- */
-let LOOK='classic';
+let LOOK='classic', LOOKV='classic';
 let SZ={head:1,text:1,foot:1,logo:1,brand:1,photo:1};
 function lookOf(st){ return st.look&&st.look!=='auto'?st.look:(TEMPLATES[st.template]?.look||'classic'); }
 const NIGHT=c=>({head:'#ffffff',sub:'rgba(255,255,255,.84)',eyebrow:c.accent,eyeLast:shade(c.blue,0.35),rule:c.pop,ruleHex:c.pop,bannerBg:c.pop,bannerFg:'#ffffff',iconBg:c.pop,iconBg2:shade(c.pop,0.18),specKey:'rgba(255,255,255,.72)',specVal:'#ffffff',tileBg:'rgba(255,255,255,.08)',tileLine:'rgba(255,255,255,.22)',boxBg:'rgba(255,255,255,.06)',boxStroke:'rgba(255,255,255,.25)',boxLineHex:'#ffffff',badgeText:'#ffffff',sepHex:'#ffffff',catTitle:c.accent,brands:'rgba(255,255,255,.84)',ctaBg:c.accent,ctaFg:'#111111',chipBg:'rgba(255,255,255,.08)',chipFg:'#ffffff',chipLine:'rgba(255,255,255,.3)',compat:'rgba(255,255,255,.7)',bullet:'#ffffff',mark:c.accent,pop:c.pop,blue:shade(c.blue,0.1)});
@@ -1084,9 +1158,38 @@ function tileCols(c){
 function hazard(ctx,x,y,w,h,c1,c2){ ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip(); ctx.fillStyle=c1; ctx.fillRect(x,y,w,h); ctx.fillStyle=c2; for(let xx=x-h*2;xx<x+w+h*2;xx+=h*2){ poly(ctx,[[xx,y+h],[xx+h,y],[xx+h*2,y],[xx+h,y+h]]); ctx.fill(); } ctx.restore(); }
 function drawBgRaw(ctx,x,y,w,h,a){ const img=S.bgPhoto.img; const sc=Math.max(w/img.width,h/img.height); ctx.save(); ctx.globalAlpha=a; ctx.drawImage(img,x+(w-img.width*sc)/2,y+(h-img.height*sc)/2,img.width*sc,img.height*sc); ctx.restore(); }
 function wmBg(ctx,W,H){ if(S.wm.mode==='post') watermark(ctx,0,0,W,H); } // background only: header bands, text, logo and the contact strip are drawn over it
+const PAT={};
+function lookPat(key,size,draw){ if(!PAT[key]){ const o=document.createElement('canvas'); o.width=o.height=size; draw(o.getContext('2d'),size); PAT[key]=o; } return PAT[key]; }
+function patFill(ctx,W,H,tile){ ctx.save(); ctx.fillStyle=ctx.createPattern(tile,'repeat'); ctx.fillRect(0,0,W,H); ctx.restore(); }
+function vignette(ctx,W,H,a){ const g=ctx.createRadialGradient(W/2,H*0.45,Math.min(W,H)*0.25,W/2,H*0.45,Math.hypot(W,H)*0.62); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,`rgba(0,0,0,${a})`); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
+function glow(ctx,x,y,r,col,a){ const g=ctx.createRadialGradient(x,y,4,x,y,r); g.addColorStop(0,alpha(col,a)); g.addColorStop(1,alpha(col,0)); ctx.fillStyle=g; ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height); }
+function bgPhotoOn(ctx,W,H,a,mode){ if(!(S.bgPhoto&&S.show.bg)) return; ctx.save(); if(mode) ctx.globalCompositeOperation=mode; drawBgRaw(ctx,0,0,W,H,a); ctx.restore(); }
+/* backgrounds of the extra looks; the base look decides every other colour */
+function tintBg(ctx,W,H,c){ const g=ctx.createLinearGradient(0,0,W*0.35,H); g.addColorStop(0,shade(c.paper,0.66)); g.addColorStop(1,shade(c.paper,0.3)); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  glow(ctx,W*0.5,H*0.3,W*0.75,'#ffffff',.45); ctx.fillStyle=alpha(c.ink,.035); poly(ctx,[[W*0.58,0],[W,0],[W,H*0.42]]); ctx.fill(); bgPhotoOn(ctx,W,H,0.18,'multiply'); }
+const LOOK_PAINT={ green:tintBg, navyLight:tintBg, tealLight:tintBg, maroonLight:tintBg,
+  blueprint(ctx,W,H,c){ const g=ctx.createLinearGradient(0,0,W*0.3,H); g.addColorStop(0,shade(c.blue,-0.3)); g.addColorStop(1,shade(c.blue,-0.62)); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); bgPhotoOn(ctx,W,H,0.14,'screen');
+    ctx.fillStyle='rgba(255,255,255,.055)'; for(let x=0;x<W;x+=32) ctx.fillRect(x,0,1,H); for(let y=0;y<H;y+=32) ctx.fillRect(0,y,W,1);
+    ctx.fillStyle='rgba(255,255,255,.12)'; for(let x=0;x<W;x+=160) ctx.fillRect(x,0,2,H); for(let y=0;y<H;y+=160) ctx.fillRect(0,y,W,2);
+    ctx.strokeStyle='rgba(255,255,255,.16)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(W*0.86,H*0.2,W*0.16,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(W*0.86,H*0.2,W*0.1,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W*0.86-W*0.2,H*0.2); ctx.lineTo(W*0.86+W*0.2,H*0.2); ctx.moveTo(W*0.86,H*0.2-W*0.2); ctx.lineTo(W*0.86,H*0.2+W*0.2); ctx.stroke(); glow(ctx,W*0.5,H*0.45,W*0.7,'#ffffff',.06); },
+  graphite(ctx,W,H,c){ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#33373f'); g.addColorStop(0.5,'#202329'); g.addColorStop(1,'#0e1013'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); bgPhotoOn(ctx,W,H,0.14);
+    patFill(ctx,W,H,lookPat('brush',64,(o,n)=>{ for(let y=0;y<n;y+=2){ o.fillStyle=`rgba(255,255,255,${(((y*37)%11)/11)*0.035})`; o.fillRect(0,y,n,1); } }));
+    glow(ctx,W*0.88,H*0.08,W*0.75,c.pop,.2); vignette(ctx,W,H,.35); },
+  carbon(ctx,W,H,c){ ctx.fillStyle='#15171b'; ctx.fillRect(0,0,W,H);
+    patFill(ctx,W,H,lookPat('carbon',24,(o,n)=>{ const h=n/2; [[0,0,1],[h,h,1],[h,0,0],[0,h,0]].forEach(([x,y,v])=>{ const gr=v?o.createLinearGradient(x,y,x+h,y):o.createLinearGradient(x,y,x,y+h); gr.addColorStop(0,'#2a2d33'); gr.addColorStop(0.5,'#3b3f47'); gr.addColorStop(1,'#1c1e23'); o.fillStyle=gr; o.fillRect(x+0.5,y+0.5,h-1,h-1); }); }));
+    bgPhotoOn(ctx,W,H,0.12,'screen'); glow(ctx,W*0.15,H*0.1,W*0.7,c.accent,.12); vignette(ctx,W,H,.55); },
+  vivid(ctx,W,H,c){ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,shade(c.blue,0.05)); g.addColorStop(0.55,c.ink); g.addColorStop(1,shade(c.ink,-0.55)); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); bgPhotoOn(ctx,W,H,0.14);
+    ctx.fillStyle='rgba(255,255,255,.07)'; poly(ctx,[[W*0.45,0],[W,0],[W,H*0.35],[W*0.1,H*0.75]]); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.045)'; ctx.beginPath(); ctx.arc(W*0.1,H*0.12,W*0.32,0,Math.PI*2); ctx.fill();
+    glow(ctx,W*0.1,H*0.95,W*0.8,c.pop,.32); glow(ctx,W*0.9,H*0.3,W*0.5,c.accent,.12); },
+  steel(ctx,W,H,c){ const g=ctx.createLinearGradient(0,0,W*0.4,H); g.addColorStop(0,'#e9ecef'); g.addColorStop(1,'#b8bec6'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    patFill(ctx,W,H,lookPat('tread',48,(o,n)=>{ const lz=(x,y,a)=>{ o.save(); o.translate(x,y); o.rotate(a); o.fillStyle='rgba(0,0,0,.13)'; rr(o,-9,-2,18,5,2.5); o.fill(); o.fillStyle='rgba(255,255,255,.55)'; rr(o,-9,-3,18,4,2); o.fill(); o.restore(); }; lz(n*0.25,n*0.25,Math.PI/4); lz(n*0.75,n*0.75,Math.PI/4); lz(n*0.75,n*0.25,-Math.PI/4); lz(n*0.25,n*0.75,-Math.PI/4); }));
+    bgPhotoOn(ctx,W,H,0.22,'multiply'); ctx.fillStyle='rgba(255,255,255,.22)'; poly(ctx,[[W*0.62,0],[W,0],[W,H*0.38]]); ctx.fill(); hazard(ctx,0,0,W,22,'#111111',c.accent); }
+};
 function paintLook(ctx,W,H,c,classic){ paintLook_(ctx,W,H,c,classic); wmBg(ctx,W,H); drawAddedDecos(ctx,false); }
 function paintLook_(ctx,W,H,c,classic){
-  if(LOOK==='night'){
+  if(LOOK_PAINT[LOOKV]) LOOK_PAINT[LOOKV](ctx,W,H,c);
+  else if(LOOK==='night'){
     const g=ctx.createLinearGradient(0,0,W*0.4,H); g.addColorStop(0,shade(c.ink,0.04)); g.addColorStop(1,shade(c.ink,-0.62)); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
     if(S.bgPhoto&&S.show.bg) drawBgRaw(ctx,0,0,W,H,0.16);
     const rg=ctx.createRadialGradient(W*0.86,H*0.12,10,W*0.86,H*0.12,W*0.85); rg.addColorStop(0,alpha(c.blue,.38)); rg.addColorStop(1,alpha(c.blue,0)); ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
@@ -1823,9 +1926,11 @@ function bFeats(){ return S.show.badges?badgeList().slice(0,3).map(b=>({ic:ICONS
 function bHeadSize(ctx,head,L,w){ return head?fitLine(ctx,head,800,HEAD,L.head,L.headMin,w,0.5):0; }
 function bFitSize(ctx,t,L,w){ return t?fitLine(ctx,t,600,BODY,L.fit,20,w,0):0; }
 // one line of text; squeezed sideways (never cut) when it is still too long at the smallest size
-function bLine(ctx,id,t,x,y,w,size,weight,fam,color,ls){ if(!t||!size) return; el(id,{x,y,w,h:size*1.14},b=>{ setFont(ctx,weight,size,fam,ls||0);
-  const tw=ctx.measureText(t).width, k=Math.min(1,b.w/Math.max(1,tw)); ctx.save(); ctx.fillStyle=color; ctx.textBaseline='top'; ctx.textAlign='center'; ctx.translate(b.x+b.w/2,b.y+size*0.06); ctx.scale(k,1); ctx.fillText(t,0,0); ctx.restore(); },{fit:true}); }
-function bBg(ctx,W,H,P){ const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,P.bgTop); g.addColorStop(1,P.bgBot); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+function bLine(ctx,id,t,x,y,w,size,weight,fam,color,ls,al){ if(!t||!size) return; const left=al==='left'; let bw=w; if(left){ setFont(ctx,weight,size,fam,ls||0); bw=Math.min(w,ctx.measureText(t).width+2); }
+  el(id,{x,y,w:bw,h:size*1.14},b=>{ setFont(ctx,weight,size,fam,ls||0);
+  const tw=ctx.measureText(t).width, k=Math.min(1,bw/Math.max(1,tw))*b.w/bw; ctx.save(); ctx.fillStyle=color; ctx.textBaseline='top'; ctx.textAlign=left?'left':'center'; ctx.translate(left?b.x:b.x+b.w/2,b.y+size*0.06); ctx.scale(k,1); ctx.fillText(t,0,0); ctx.restore(); },{fit:true}); }
+function bBg(ctx,W,H,P){ if(LOOK_PAINT[LOOKV]){ LOOK_PAINT[LOOKV](ctx,W,H,S.colors); wmBg(ctx,W,H); drawAddedDecos(ctx,false); return; }
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,P.bgTop); g.addColorStop(1,P.bgBot); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
   if(!P.dark) drawBg(ctx,{x:0,y:0,w:W,h:H*0.62},'none',P.bgTop,0.25); wmBg(ctx,W,H); drawAddedDecos(ctx,false); }
 function bHeader(ctx,W,c,P,L){ const T=S.text, hdr=L.hdr;
   deco('band',{x:0,y:0,w:W,h:hdr},()=>{ ctx.fillStyle=P.band; ctx.fillRect(0,0,W,hdr); });
@@ -1837,8 +1942,8 @@ function bHeader(ctx,W,c,P,L){ const T=S.text, hdr=L.hdr;
   const total=(showS?sw+gap:0)+lw+2*lp+(bimg?gap+bw+bh*0.4:0); let x=(W-total)/2; const cy=hdr/2;
   if(showS){ const sh=(sp.label?ls*1.25:0)+ys*0.98, sy=cy-sh/2, sx=x;
     el('since',{x:sx,y:sy,w:sw,h:sh},()=>{
-      if(sp.label) el('sincelab',{x:sx,y:sy,w:sw,h:ls*1.15},b=>{ setFont(ctx,700,ls,BODY,ls*0.32); ctx.fillStyle='rgba(255,255,255,.88)'; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.label.toUpperCase(),b.x+b.w/2,b.y); },{fit:true});
-      if(sp.year) el('year',{x:sx,y:sy+(sp.label?ls*1.25:0),w:sw,h:ys*0.98},b=>{ setFont(ctx,800,ys,HEAD,1); ctx.fillStyle=P.gold; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.year,b.x+b.w/2,b.y-ys*0.04); },{fit:true}); });
+      if(sp.label) el('sincelab',{x:sx,y:sy,w:sw,h:ls*1.15},b=>{ setFont(ctx,700,ls,BODY,ls*0.32); ctx.fillStyle='rgba(255,255,255,.88)'; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.label.toUpperCase(),b.x+b.w/2,b.y); });
+      if(sp.year) el('year',{x:sx,y:sy+(sp.label?ls*1.25:0),w:sw,h:ys*0.98},b=>{ setFont(ctx,800,ys,HEAD,1); ctx.fillStyle=P.gold; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.year,b.x+b.w/2,b.y-ys*0.04); }); });
     x+=sw+gap; }
   parcoLogo(ctx,x+lp,cy-hh/2,lh0,'left',true); x+=lw+2*lp+gap;
   if(bimg){ const bx=x+bh*0.2; el('brand',{x:bx-bh*0.2,y:cy-bh*0.7,w:bw+bh*0.4,h:bh*1.4},()=>drawLogo(ctx,bimg,bx,cy-bh/2,bh,'left',true)); } }
@@ -1873,15 +1978,15 @@ function pillGeom(ctx,p,h){ const ks=h*0.25, vs=h*0.5; setFont(ctx,700,ks,BODY,k
 function bPill(ctx,p,r,P){ el('pill',r,b=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.1)'; ctx.shadowBlur=10; ctx.shadowOffsetY=3; ctx.fillStyle='#ffffff'; rr(ctx,b.x,b.y,b.w,b.h,b.h/2); ctx.fill(); ctx.restore();
     ctx.lineWidth=Math.max(3,b.h*0.05); ctx.strokeStyle=P.line; rr(ctx,b.x+ctx.lineWidth/2,b.y+ctx.lineWidth/2,b.w-ctx.lineWidth,b.h-ctx.lineWidth,b.h/2); ctx.stroke();
     const G=pillGeom(ctx,p,b.h), room=b.w-b.h*0.9-(p.k?b.h*0.3:0), k=Math.min(1,room/Math.max(1,G.kw+G.vw)), kw=G.kw*k, vw=G.vw*k, x0=b.x+(b.w-(kw+(p.k?b.h*0.3:0)+vw))/2;
-    if(p.k) el('pk',{x:x0,y:b.y+b.h*0.3,w:kw,h:b.h*0.4},q=>{ setFont(ctx,700,G.ks*k,BODY,G.ks*0.2*k); ctx.fillStyle=alpha(P.line,.9); ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.k,q.x,q.y+q.h/2+1); },{fit:true});
-    el('pv',{x:x0+kw+(p.k?b.h*0.3:0),y:b.y+b.h*0.18,w:vw,h:b.h*0.64},q=>{ setFont(ctx,800,G.vs*k,HEAD,G.vs*0.02*k); ctx.fillStyle=P.ink; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.v,q.x,q.y+q.h/2+G.vs*k*0.04); },{fit:true});
+    if(p.k) el('pk',{x:x0,y:b.y+b.h*0.3,w:kw,h:b.h*0.4},q=>{ setFont(ctx,700,G.ks*k,BODY,G.ks*0.2*k); ctx.fillStyle=alpha(P.line,.9); ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.k,q.x,q.y+q.h/2+1); });
+    el('pv',{x:x0+kw+(p.k?b.h*0.3:0),y:b.y+b.h*0.18,w:vw,h:b.h*0.64},q=>{ setFont(ctx,800,G.vs*k,HEAD,G.vs*0.02*k); ctx.fillStyle=P.ink; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.v,q.x,q.y+q.h/2+G.vs*k*0.04); });
   },{fit:true}); }
-function bPillRow(ctx,pills,x,w,y,h,g,P){ if(!pills.length) return; const nat=Math.max(...pills.map(p=>pillGeom(ctx,p,h).w)), pw=Math.min((w-g*(pills.length-1))/pills.length,Math.max(nat,h*3.2));
-  let px=x+(w-(pw*pills.length+g*(pills.length-1)))/2; pills.forEach(p=>{ bPill(ctx,p,{x:px,y,w:pw,h},P); px+=pw+g; }); }
+function bPillRow(ctx,pills,x,w,y,h,g,P,al){ if(!pills.length) return; const nat=Math.max(...pills.map(p=>pillGeom(ctx,p,h).w)), pw=Math.min((w-g*(pills.length-1))/pills.length,Math.max(nat,h*3.2));
+  let px=al==='left'?x:x+(w-(pw*pills.length+g*(pills.length-1)))/2; pills.forEach(p=>{ bPill(ctx,p,{x:px,y,w:pw,h},P); px+=pw+g; }); }
 function bIcon(ctx,f,cx,cy,d,P){ el('ficon',{x:cx-d/2,y:cy-d/2,w:d,h:d},q=>{ ctx.fillStyle=P.iconBg; ovalPath(ctx,q,0); ctx.fill(); const s=Math.min(q.w,q.h)*0.54; icon(ctx,f.ic,q.x+q.w/2-s/2,q.y+q.h/2-s/2,s,'#ffffff',2.2); },{fit:true}); }
 function bFLine(ctx,x,y,w,h,P){ el('fline',{x,y,w,h},q=>{ ctx.fillStyle=P.acc; rr(ctx,q.x,q.y,q.w,q.h,q.h/2); ctx.fill(); },{fit:true}); }
 function bFText(ctx,t,r,size,P,align){ el('ftext',r,q=>{ const f=fitLines(ctx,t,800,BODY,size,12,q.w,2,0.02); const lh=f.size*1.08; setFont(ctx,800,f.size,BODY,f.size*0.02); ctx.fillStyle=P.ink; ctx.textBaseline='top'; ctx.textAlign=align||'center';
-  const y0=q.y+(q.h-f.lines.length*lh)/2, x=align==='left'?q.x:q.x+q.w/2; f.lines.forEach((l,j)=>ctx.fillText(l,x,y0+j*lh)); },{fit:true}); }
+  const y0=q.y+(q.h-f.lines.length*lh)/2, x=align==='left'?q.x:q.x+q.w/2; f.lines.forEach((l,j)=>ctx.fillText(l,x,y0+j*lh)); }); }
 function bCardBg(ctx,b,P,rad){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.14)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6; ctx.fillStyle='#ffffff'; rr(ctx,b.x,b.y,b.w,b.h,rad); ctx.fill(); ctx.restore(); ctx.lineWidth=2; ctx.strokeStyle=alpha(P.line,.35); rr(ctx,b.x+1,b.y+1,b.w-2,b.h-2,rad); ctx.stroke(); }
 // feature card: icon circle on top, short orange underline, bold label
 function bFeatCard(ctx,f,r,P){ el('feat',r,b=>{ bCardBg(ctx,b,P,20); const d=Math.min(b.h*0.4,b.w*0.42), cx=b.x+b.w/2, cy=b.y+b.h*0.09+d/2; bIcon(ctx,f,cx,cy,d,P);
@@ -1896,12 +2001,41 @@ function bFeatStack(ctx,feats,R,g,P,rowH){ const n=feats.length; if(!n) return; 
 function bFeatStrip(ctx,feats,R,P){ const n=feats.length; if(!n) return; el('fstrip',R,b=>{ bCardBg(ctx,b,P,b.h/2); const w=b.w/n;
   feats.forEach((f,j)=>{ const sx=b.x+j*w; if(j) el('divider',{x:sx-1,y:b.y+b.h*0.2,w:2,h:b.h*0.6},q=>{ ctx.fillStyle=alpha(P.line,.3); ctx.fillRect(q.x,q.y,q.w,q.h); },{fit:true});
     el('feat',{x:sx,y:b.y,w,h:b.h},q=>{ const d=q.h*0.6, cx=q.x+q.h*0.32+d/2, cy=q.y+q.h/2; bIcon(ctx,f,cx,cy,d,P); const tx=cx+d/2+q.h*0.16;
-      bFText(ctx,f.t,{x:tx,y:q.y+q.h*0.14,w:q.x+q.w-tx-10,h:q.h*0.52},Math.min(30,q.h*0.3),P,'left'); bFLine(ctx,tx,q.y+q.h*0.7,Math.min(52,q.w*0.18),Math.max(4,q.h*0.05),P); },{fit:true}); }); },{fit:true}); }
+      bFText(ctx,f.t,{x:tx,y:q.y+q.h*0.14,w:q.x+q.w-tx-10,h:q.h*0.52},Math.min(30,q.h*0.3),P,'left'); bFLine(ctx,tx,q.y+q.h*0.7,Math.min(52,q.w*0.18),Math.max(4,q.h*0.05),P); }); }); },{fit:true}); }
 // shared top: header, headline, fitment, pills; returns y after it (measure only when draw is false)
 function bTop(ctx,W,c,P,L,o,draw){ const head=(S.text.headline||'').toUpperCase(), fitT=bFitment(), pills=o.pills?bPills(head):[], w=W-2*L.pad;
   const hs=bHeadSize(ctx,head,L,w), fs=bFitSize(ctx,fitT,L,w); let y=o.y; const yH=y; y+=hs*1.06; const yF=y+(fitT?6:0); if(fitT) y=yF+fs*1.3; y+=L.gap*0.8; const yP=y; if(pills.length) y+=L.pill+L.gap;
   if(draw){ bLine(ctx,'headline',head,L.pad,yH,w,hs,800,HEAD,o.head||P.head,0.5); bLine(ctx,'fitment',fitT,L.pad,yF,w,fs,600,BODY,o.text||P.text,0); bPillRow(ctx,pills,L.pad,w,yP,L.pill,L.g,P); }
   return y; }
+// side by side or stacked: whichever gives the photos more room
+function bBest(R,k,g,mode){ mode=mode||'center'; if(k===1) return bArrange(R,1,mode,g);
+  const sc=a=>{ const ar=a.map(o=>o.w*o.h), mx=Math.max(...ar), mn=Math.min(...ar); return ar.reduce((t,v)=>t+v,0)*Math.pow(mn/mx,0.35); };
+  const C=[bArrange(R,k,mode,g,false),bArrange(R,k,mode,g,true),bTwoUp(R,k,g)]; if(k===3) C.push(bHeroRow(R,g)); return C.reduce((b,a)=>sc(a)>sc(b)*1.04?a:b); }
+// three in one row: the hero full height in the middle, the others a little shorter
+function bHeroRow(R,g){ const ids=[1,0,2], hs=[R.h*0.74,R.h,R.h*0.74], nat=ids.map((i,j)=>bCard(i,1e5,hs[j]).w), f=Math.min(1,(R.w-2*g)/nat.reduce((a,b)=>a+b,0));
+  let x=R.x+(R.w-nat.reduce((a,b)=>a+b,0)*f-2*g)/2; return ids.map((i,j)=>{ const s=bCard(i,nat[j]*f,hs[j]), o={i,x:x+(nat[j]*f-s.w)/2,y:R.y+(R.h-s.h)*(j===1?0.5:0.62),w:s.w,h:s.h}; x+=nat[j]*f+g; return o; }); }
+// headline on up to two lines, left-aligned (Side Panel)
+function bHead2(ctx,head,L,w){ if(!head) return {size:0,lines:[],h:0,w:0}; let f=fitLines(ctx,head,800,HEAD,L.head,L.headMin,w,2,0.005);
+  if(f.lines.some(l=>l.endsWith('…'))){ // too long even at the smallest size: two balanced lines, squeezed sideways, never cut
+    const ws=head.split(/\s+/).filter(Boolean); let best=1, bd=1e9; for(let i=1;i<ws.length;i++){ const d=Math.abs(ws.slice(0,i).join(' ').length-ws.slice(i).join(' ').length); if(d<bd){ bd=d; best=i; } }
+    f={size:L.headMin,lines:ws.length>1?[ws.slice(0,best).join(' '),ws.slice(best).join(' ')]:[head]}; }
+  const lh=f.size*1.02; setFont(ctx,800,f.size,HEAD,f.size*0.005);
+  return {...f,lh,max:w,h:f.lines.length*lh,w:Math.min(w,Math.max(...f.lines.map(l=>ctx.measureText(l).width))+2)}; }
+function bHead2Draw(ctx,hd,x,y,color){ if(!hd.lines.length) return; el('headline',{x,y,w:hd.w,h:hd.h},()=>{ setFont(ctx,800,hd.size,HEAD,hd.size*0.005); ctx.fillStyle=color; ctx.textAlign='left'; ctx.textBaseline='top';
+  hd.lines.forEach((l,j)=>{ const k=Math.min(1,hd.max/Math.max(1,ctx.measureText(l).width)); ctx.save(); ctx.translate(x,y+j*hd.lh+hd.size*0.04); ctx.scale(k,1); ctx.fillText(l,0,0); ctx.restore(); }); }); }
+function bLogoH(maxW,h0){ const lg=LOGO.parco, r=lg?lg.width/lg.height:3; return Math.min(h0,maxW/(r+0.4)/SZ.logo); }
+function bLogoW(h0){ const lg=LOGO.parco, hh=h0*SZ.logo; return (lg?hh*lg.width/lg.height:hh*3)+hh*0.4; }
+// SINCE / 1971 stacked and centred at cx (Side Panel column)
+function bSinceStack(ctx,cx,y,L,P,lab){ const sp=sinceParts(); if(!(S.show.since&&(sp.year||sp.label))) return 0; const ys=(L.sq?72:86)*SZ.text, ls=(L.sq?22:26)*SZ.text;
+  setFont(ctx,800,ys,HEAD,1); const yw=sp.year?ctx.measureText(sp.year).width:0; setFont(ctx,700,ls,BODY,ls*0.32); const lbw=sp.label?ctx.measureText(sp.label.toUpperCase()).width:0; const sw=Math.max(yw,lbw)+4, sh=(sp.label?ls*1.3:0)+ys*0.98;
+  el('since',{x:cx-sw/2,y,w:sw,h:sh},()=>{
+    if(sp.label) el('sincelab',{x:cx-sw/2,y,w:sw,h:ls*1.15},b=>{ setFont(ctx,700,ls,BODY,ls*0.32); ctx.fillStyle=lab; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.label.toUpperCase(),b.x+b.w/2,b.y); });
+    if(sp.year) el('year',{x:cx-sw/2,y:y+(sp.label?ls*1.3:0),w:sw,h:ys*0.98},b=>{ setFont(ctx,800,ys,HEAD,1); ctx.fillStyle=P.gold; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.year,b.x+b.w/2,b.y-ys*0.04); }); });
+  return sh; }
+// feature block for a dark column: icon on top, gold line, white label
+function bFeatCol(ctx,f,r,P){ const Q={...P,ink:'#ffffff',iconBg:P.acc,acc:P.gold}; el('feat',r,b=>{ const d=Math.min(b.h*0.42,b.w*0.3,86), cx=b.x+b.w/2, cy=b.y+d/2+b.h*0.04; bIcon(ctx,f,cx,cy,d,Q);
+    const ly=cy+d/2+b.h*0.07; bFLine(ctx,cx-Math.min(30,b.w*0.12),ly,Math.min(60,b.w*0.24),Math.max(4,b.h*0.025),Q);
+    const ty=ly+b.h*0.06; bFText(ctx,f.t,{x:b.x+8,y:ty,w:b.w-16,h:b.y+b.h-ty},Math.min(30,b.h*0.17),Q); }); }
 const BRAND={
   // A: hero in the centre, a card each side, feature cards in a row
   brandHero(ctx,W,H,s){ const c=S.colors, P=bpal(c), L=bSizes(W,H,s), feats=bFeats(), k=bCount(), bottom=H-contactH();
@@ -1910,41 +2044,68 @@ const BRAND={
     return {ok:R.h>=H*(L.sq?0.25:0.3),draw(){ bBg(ctx,W,H,P); bHeader(ctx,W,c,P,L); bTop(ctx,W,c,P,L,{y:y0,pills:true},true);
       if(solo){ bPhoto(ctx,0,solo.hero,P); bFeatStack(ctx,feats,solo.feat,L.g,P,L.featRow*1.3); }
       else { bArrange(R,k,'center',L.g,L.tall).forEach(a=>bPhoto(ctx,a.i,a,P)); if(fh) bFeatCards(ctx,feats,{x:L.pad,y:yF,w:W-2*L.pad,h:fh},L.g,P); } stdFooter(ctx,W,H,c,'brand'); }}; },
-  // B: big hero on the left with the other photos under it; pills and stacked feature cards on the right (one column in story)
-  brandSplit(ctx,W,H,s){ const c=S.colors, P=bpal(c), L=bSizes(W,H,s), feats=bFeats(), k=bCount(), bottom=H-contactH(), head=(S.text.headline||'').toUpperCase(), pills=bPills(head);
-    const y0=L.hdr+8+L.gap, y1=bTop(ctx,W,c,P,L,{y:y0,pills:false},false);
-    if(L.tall){ const fh=feats.length?feats.length*L.featRow+(feats.length-1)*L.g:0, yF=bottom-L.gap-fh, yP=(fh?yF-L.gap:bottom-L.gap)-(pills.length?L.pill:0);
-      const R={x:L.pad-10,y:y1,w:W-2*L.pad+20,h:yP-L.gap-y1};
-      return {ok:R.h>=H*0.34,draw(){ bBg(ctx,W,H,P); bHeader(ctx,W,c,P,L); bTop(ctx,W,c,P,L,{y:y0,pills:false},true);
-        bTwoUp(R,k,L.g).forEach(a=>bPhoto(ctx,a.i,a,P)); bPillRow(ctx,pills,L.pad,W-2*L.pad,yP,L.pill,L.g,P);
-        if(fh) bFeatStack(ctx,feats,{x:L.pad,y:yF,w:W-2*L.pad,h:fh},L.g,P,L.featRow); stdFooter(ctx,W,H,c,'brand'); }}; }
-    const lw=Math.round((W-2*L.pad)*0.56), rx=L.pad+lw+L.g, rw=W-L.pad-rx, bodyH=bottom-L.gap-y1;
-    const pillsH=pills.length*L.pill+Math.max(0,pills.length-1)*L.g*0.7, featsAvail=bodyH-pillsH-(pills.length?L.gap:0), rowH=Math.min(L.featRow*1.5,(featsAvail-L.g*(feats.length-1))/Math.max(1,feats.length));
-    const featsH=feats.length?rowH*feats.length+L.g*(feats.length-1):0, colH=pillsH+(pills.length&&feats.length?L.gap:0)+featsH, cy=y1+Math.max(0,(bodyH-colH)/2);
-    const R={x:L.pad-8,y:y1,w:lw+8,h:bodyH};
-    return {ok:bodyH>=H*(L.sq?0.42:0.45)&&(!feats.length||rowH>=L.featRow*0.72),draw(){ bBg(ctx,W,H,P); bHeader(ctx,W,c,P,L); bTop(ctx,W,c,P,L,{y:y0,pills:false},true);
-      bTwoUp(R,k,L.g).forEach(a=>bPhoto(ctx,a.i,a,P));
-      let y=cy; pills.forEach(p=>{ bPill(ctx,p,{x:rx,y,w:rw,h:L.pill},P); y+=L.pill+L.g*0.7; });
-      if(feats.length) bFeatStack(ctx,feats,{x:rx,y:cy+pillsH+(pills.length?L.gap:0),w:rw,h:featsH},L.g,P,rowH); stdFooter(ctx,W,H,c,'brand'); }}; },
-  // C: angled colour band behind the headline, hero overlapping it, side photos in the bottom corners, icon strip
-  brandBand(ctx,W,H,s){ const c=S.colors, P=bpal(c), L=bSizes(W,H,s), feats=bFeats(), k=bCount(), bottom=H-contactH(), skew=L.sq?44:L.tall?90:66, ov=L.sq?50:L.tall?110:80;
-    const y0=L.hdr+8+L.gap, y1=bTop(ctx,W,c,P,L,{y:y0,pills:true},false), bandB=y1+skew, fh=feats.length?L.strip:0, yF=bottom-L.gap-fh;
-    const R={x:L.pad-10,y:bandB-ov,w:W-2*L.pad+20,h:yF-(fh?L.gap:0)-(bandB-ov)}, solo=k===1?bSolo({...R,h:bottom-L.gap-R.y},feats,L,true):null;
-    return {ok:R.h>=H*(L.sq?0.3:0.34),draw(){ bBg(ctx,W,H,P); bHeader(ctx,W,c,P,L);
-      deco('angle',{x:0,y:L.hdr+8,w:W,h:bandB-(L.hdr+8)},()=>{ const g=ctx.createLinearGradient(0,L.hdr,W,bandB); g.addColorStop(0,P.angle); g.addColorStop(1,shade(P.angle,-0.25)); ctx.fillStyle=g; poly(ctx,[[0,L.hdr+8],[W,L.hdr+8],[W,bandB-skew],[0,bandB]]); ctx.fill();
-        ctx.fillStyle=P.acc; poly(ctx,[[0,bandB],[W,bandB-skew],[W,bandB-skew+6],[0,bandB+6]]); ctx.fill(); });
-      bTop(ctx,W,c,P,L,{y:y0,pills:true,head:P.dark||LOOK==='site'?c.accent:'#ffffff',text:'#ffffff'},true);
-      if(solo){ bPhoto(ctx,0,solo.hero,P); const fr={...solo.feat,y:bandB+L.gap,h:bottom-L.gap-(bandB+L.gap)}; bFeatStack(ctx,feats,fr,L.g,P,L.featRow*1.3); }
-      else { bArrange(R,k,'corners',L.g,L.tall).forEach(a=>bPhoto(ctx,a.i,a,P)); if(fh) bFeatStrip(ctx,feats,{x:L.pad,y:yF,w:W-2*L.pad,h:fh},P); } stdFooter(ctx,W,H,c,'brand'); }}; },
-  // D: photo wall on top, dark panel below with headline, pills and icon cards
-  brandWall(ctx,W,H,s){ const c=S.colors, P=bpal(c), L=bSizes(W,H,s), feats=bFeats(), k=bCount(), bottom=H-contactH();
-    const fcH=L.sq?L.feat*0.72:L.feat*0.86, ph=L.gap*1.4+(bTop(ctx,W,c,P,L,{y:0,pills:true},false))+(feats.length?fcH+L.gap:0)+L.gap*0.4, pTop=bottom-ph;
-    const R={x:L.pad-10,y:L.hdr+8+L.gap,w:W-2*L.pad+20,h:pTop-L.gap-(L.hdr+8+L.gap)};
-    return {ok:R.h>=H*(L.sq?0.33:0.32),draw(){ bBg(ctx,W,H,P); bHeader(ctx,W,c,P,L); bArrange(R,k,'center',L.g,L.tall).forEach(a=>bPhoto(ctx,a.i,a,P));
-      deco('panel',{x:0,y:pTop,w:W,h:bottom-pTop},()=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.25)'; ctx.shadowBlur=24; ctx.shadowOffsetY=-6; ctx.fillStyle=P.panel; rr(ctx,0,pTop,W,bottom-pTop+40,40); ctx.fill(); ctx.restore();
-        ctx.fillStyle=P.acc; ctx.fillRect(W/2-60,pTop+16,120,6); });
-      const yE=bTop(ctx,W,c,P,L,{y:pTop+L.gap*1.4,pills:true,head:c.accent,text:'#ffffff'},true);
-      if(feats.length) bFeatCards(ctx,feats,{x:L.pad,y:yE,w:W-2*L.pad,h:fcH},L.g,P); stdFooter(ctx,W,H,c,'brand'); }}; }
+  // B · Side Panel: dark column on the left (logo card, SINCE 1971, features); headline left-aligned on up to two lines; photos on the right
+  brandSplit(ctx,W,H,s){ const c=S.colors, P=bpal(c), L=bSizes(W,H,s), feats=bFeats(), k=bCount(), bottom=H-contactH(), head=(S.text.headline||'').toUpperCase(), pills=bPills(head), fitT=bFitment();
+    const colW=L.sq?300:L.tall?340:320, x0=colW+8+L.pad, w=W-x0-L.pad, lh0=bLogoH(colW-48,L.sq?92:104), lbW=bLogoW(lh0), lbH=lh0*SZ.logo*1.4, top=L.sq?30:L.tall?56:42;
+    const sp=sinceParts(), ys=(L.sq?72:86)*SZ.text, lsz=(L.sq?22:26)*SZ.text, sinceH=S.show.since&&(sp.year||sp.label)?(sp.label?lsz*1.3:0)+ys*0.98:0;
+    const bimg=brandImg(), bh=bimg?Math.min(64,(colW-60)/Math.max(0.5,bimg.width/bimg.height)/1.2):0;
+    const yS=top+lbH+L.gap*1.2, yB=yS+sinceH+(sinceH?L.gap:0), yF0=yB+(bh?bh*1.4+L.gap:0), n=feats.length, fAvail=bottom-L.gap-yF0, hb=n?Math.min(L.sq?170:L.tall?230:200,(fAvail-L.g*(n-1))/n):0;
+    const hd=bHead2(ctx,head,L,w), fs=bFitSize(ctx,fitT,L,w); let y=top; const yH=y; y+=hd.h+12; const yR=y; y+=8+L.gap*0.8; const yFit=y; if(fitT) y+=fs*1.3+L.gap*0.6; const yP=y; if(pills.length) y+=L.pill+L.gap;
+    const R={x:x0-6,y,w:w+12,h:bottom-L.gap-y};
+    return {ok:R.h>=H*(L.sq?0.3:0.32)&&(!n||hb>=(L.sq?96:110)),draw(){ bBg(ctx,W,H,P);
+      deco('band',{x:0,y:0,w:colW,h:bottom},()=>{ ctx.fillStyle=P.band; ctx.fillRect(0,0,colW,bottom); ctx.fillStyle='rgba(255,255,255,.05)'; for(let yy=40;yy<bottom;yy+=40) ctx.fillRect(0,yy,colW,1); });
+      deco('stripe',{x:colW,y:0,w:8,h:bottom},()=>{ ctx.fillStyle=P.acc; ctx.fillRect(colW,0,8,bottom); });
+      parcoLogo(ctx,colW/2,top+lh0*SZ.logo*0.2,lh0,'center',true);
+      bSinceStack(ctx,colW/2,yS,L,P,'rgba(255,255,255,.88)');
+      if(bimg){ const bw=Math.min(bh*bimg.width/bimg.height,colW-80); el('brand',{x:colW/2-bw/2-bh*0.2,y:yB-bh*0.2,w:bw+bh*0.4,h:bh*1.4},()=>drawLogo(ctx,bimg,colW/2,yB,bw*bimg.height/bimg.width,'center',true)); }
+      feats.forEach((f,j)=>bFeatCol(ctx,f,{x:22,y:yF0+j*(hb+L.g)+Math.max(0,(fAvail-(hb*n+L.g*(n-1)))/2),w:colW-44,h:hb},P));
+      bHead2Draw(ctx,hd,x0,yH,P.head); deco('hrule',{x:x0,y:yR,w:96,h:8},()=>{ ctx.fillStyle=P.acc; rr(ctx,x0,yR,96,8,4); ctx.fill(); });
+      bLine(ctx,'fitment',fitT,x0,yFit,w,fs,600,BODY,P.text,0,'left'); bPillRow(ctx,pills,x0,w,yP,L.pill,L.g,P,'left');
+      bBest(R,k,L.g).forEach(a=>bPhoto(ctx,a.i,a,P)); stdFooter(ctx,W,H,c,'brand'); }}; },
+  // C · Diagonal Ribbon: angled header with the logo card, SINCE 1971 as a round seal, headline in a ribbon, photos with corner cards, icon strip
+  brandBand(ctx,W,H,s){ const c=S.colors, P=bpal(c), L=bSizes(W,H,s), feats=bFeats(), k=bCount(), bottom=H-contactH(), head=(S.text.headline||'').toUpperCase(), pills=bPills(head), fitT=bFitment();
+    const hL=L.hdr, hR=Math.round(L.hdr*0.6), sr=(L.sq?70:L.tall?92:82)*SZ.text, scx=W-L.pad-sr, scy=hR+10, lh0=L.sq?82:96, lhh=lh0*SZ.logo;
+    const sp=sinceParts(), showS=S.show.since&&!!(sp.year||sp.label), y0=Math.max(hL+8,showS?scy+sr:0)+L.gap, rp=L.sq?30:40;
+    const hs=bHeadSize(ctx,head,L,W-2*L.pad-2*rp), rh=hs?hs*1.42:0, fs=bFitSize(ctx,fitT,L,W-2*L.pad);
+    let y=y0+rh+(rh?L.gap*0.8:0); const yFit=y; if(fitT) y+=fs*1.3+L.gap*0.5; const yP=y; if(pills.length) y+=L.pill+L.gap;
+    const fh=feats.length?L.strip:0, yF=bottom-L.gap-fh, R={x:L.pad-10,y,w:W-2*L.pad+20,h:yF-(fh?L.gap:0)-y}, solo=k===1?bSolo({...R,h:bottom-L.gap-y},feats,L,true):null;
+    return {ok:R.h>=H*(L.sq?0.28:0.32),draw(){ bBg(ctx,W,H,P);
+      deco('band',{x:0,y:0,w:W,h:hL},()=>{ ctx.fillStyle=P.band; poly(ctx,[[0,0],[W,0],[W,hR],[0,hL]]); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.06)'; poly(ctx,[[W*0.42,0],[W*0.62,0],[W*0.5,hL-(hL-hR)*0.5],[W*0.3,hL-(hL-hR)*0.3]]); ctx.fill(); });
+      deco('stripe',{x:0,y:hR,w:W,h:hL-hR+8},()=>{ ctx.fillStyle=P.acc; poly(ctx,[[0,hL],[W,hR],[W,hR+8],[0,hL+8]]); ctx.fill(); });
+      parcoLogo(ctx,L.pad+lhh*0.2,Math.max(16,(hL*0.86-lhh)/2),lh0,'left',true);
+      const bimg=brandImg(); if(bimg){ const bh=lhh*0.7, bw=Math.min(bh*bimg.width/bimg.height,bh*3), bx=L.pad+bLogoW(lh0)+30, by=Math.max(16,(hL*0.86-bh)/2)+lhh*0.1; el('brand',{x:bx-bh*0.2,y:by-bh*0.2,w:bw+bh*0.4,h:bh*1.4},()=>drawLogo(ctx,bimg,bx,by,bh,'left',true)); }
+      if(showS) el('since',{x:scx-sr,y:scy-sr,w:2*sr,h:2*sr},()=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6; ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(scx,scy,sr,0,Math.PI*2); ctx.fill(); ctx.restore();
+          ctx.lineWidth=sr*0.09; ctx.strokeStyle=P.band; ctx.beginPath(); ctx.arc(scx,scy,sr*0.9,0,Math.PI*2); ctx.stroke(); ctx.lineWidth=2; ctx.strokeStyle=P.acc; ctx.setLineDash([4,5]); ctx.beginPath(); ctx.arc(scx,scy,sr*0.74,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+          const lz=sr*0.24, yz=sr*0.62;
+          if(sp.label) el('sincelab',{x:scx-sr*0.6,y:scy-sr*0.5,w:sr*1.2,h:lz*1.1},b=>{ setFont(ctx,700,lz,BODY,lz*0.25); ctx.fillStyle=P.band; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.label.toUpperCase(),b.x+b.w/2,b.y); });
+          if(sp.year) el('year',{x:scx-sr*0.66,y:scy-sr*(sp.label?0.2:0.36),w:sr*1.32,h:yz},b=>{ const z=fitLine(ctx,sp.year,800,HEAD,yz,10,b.w,0); ctx.fillStyle=P.acc; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(sp.year,b.x+b.w/2,b.y+(b.h-z)*0.4); }); },{rot:-10});
+      if(rh) deco('ribbon',{x:L.pad-16,y:y0,w:W-2*L.pad+32,h:rh+12},()=>{ const x1=L.pad-16, x2=W-L.pad+16, sk=rh*0.35; ctx.fillStyle=shade(P.stripe,-0.35); poly(ctx,[[x1,y0+rh],[x1+18,y0+rh],[x1+18,y0+rh+12]]); ctx.fill(); poly(ctx,[[x2,y0+rh],[x2-18,y0+rh],[x2-18,y0+rh+12]]); ctx.fill();
+          ctx.save(); ctx.shadowColor='rgba(0,0,0,.2)'; ctx.shadowBlur=12; ctx.shadowOffsetY=4; ctx.fillStyle=P.stripe; poly(ctx,[[x1+sk,y0],[x2,y0],[x2-sk,y0+rh],[x1,y0+rh]]); ctx.fill(); ctx.restore();
+          ctx.fillStyle=P.acc; poly(ctx,[[x1+sk,y0],[x1+sk+10,y0],[x1+10,y0+rh],[x1,y0+rh]]); ctx.fill(); poly(ctx,[[x2-10,y0],[x2,y0],[x2-sk,y0+rh],[x2-sk-10,y0+rh]]); ctx.fill(); });
+      bLine(ctx,'headline',head,L.pad+rp,y0+(rh-hs*1.14)/2,W-2*L.pad-2*rp,hs,800,HEAD,LOOK==='site'?'#111111':'#ffffff',0.5);
+      bLine(ctx,'fitment',fitT,L.pad,yFit,W-2*L.pad,fs,600,BODY,P.text,0); bPillRow(ctx,pills,L.pad,W-2*L.pad,yP,L.pill,L.g,P);
+      if(solo){ bPhoto(ctx,0,solo.hero,P); const fr={...solo.feat,y:R.y,h:bottom-L.gap-R.y}; bFeatStack(ctx,feats,fr,L.g,P,L.featRow*1.3); }
+      else { bBest(R,k,L.g,'corners').forEach(a=>bPhoto(ctx,a.i,a,P)); if(fh) bFeatStrip(ctx,feats,{x:L.pad,y:yF,w:W-2*L.pad,h:fh},P); } stdFooter(ctx,W,H,c,'brand'); }}; },
+  // D · Photo First: photos fill the top; the logo card and a SINCE 1971 tag sit on the edge of a dark details panel; left-aligned text
+  brandWall(ctx,W,H,s){ const c=S.colors, P=bpal(c), L=bSizes(W,H,s), feats=bFeats(), k=bCount(), bottom=H-contactH(), head=(S.text.headline||'').toUpperCase(), pills=bPills(head), fitT=bFitment();
+    const lh0=L.sq?78:94, lhh=lh0*SZ.logo, lbH=lhh*1.4, w=W-2*L.pad, hs=bHeadSize(ctx,head,L,w), fs=bFitSize(ctx,fitT,L,w), fcH=feats.length?L.featRow*(L.sq?0.95:1.05):0;
+    const ph=lbH/2+L.gap*0.9+hs*1.08+(fitT?fs*1.3+L.gap*0.4:0)+(pills.length?L.pill+L.gap*0.8:0)+(fcH?fcH+L.gap:0)+L.gap*0.5, pTop=bottom-ph, top=L.sq?26:L.tall?44:34;
+    const R={x:L.pad-10,y:top,w:W-2*L.pad+20,h:pTop-lbH/2-L.gap-top};
+    const sp=sinceParts(), showS=S.show.since&&!!(sp.year||sp.label), th=lbH*0.56, tz=th*0.5, lw=bLogoW(lh0);
+    return {ok:R.h>=H*(L.sq?0.3:0.32),draw(){ bBg(ctx,W,H,P);
+      bBest(R,k,L.g).forEach(a=>bPhoto(ctx,a.i,a,P));
+      deco('band',{x:0,y:pTop,w:W,h:bottom-pTop},()=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=26; ctx.shadowOffsetY=-6; ctx.fillStyle=P.panel; rr(ctx,0,pTop,W,bottom-pTop+40,38); ctx.fill(); ctx.restore(); });
+      deco('stripe',{x:W-L.pad-150,y:pTop+20,w:150,h:7},()=>{ ctx.fillStyle=P.acc; rr(ctx,W-L.pad-150,pTop+20,150,7,3.5); ctx.fill(); });
+      parcoLogo(ctx,L.pad+lhh*0.2,pTop-lhh/2,lh0,'left',true);
+      let tx=L.pad+lw+18; const bimg=brandImg(); if(bimg){ const bh=lhh*0.66, bw=Math.min(bh*bimg.width/bimg.height,bh*3); el('brand',{x:tx,y:pTop-bh*0.7,w:bw+bh*0.4,h:bh*1.4},()=>drawLogo(ctx,bimg,tx+bh*0.2,pTop-bh/2,bh,'left',true)); tx+=bw+bh*0.4+18; }
+      if(showS){ setFont(ctx,700,tz*0.62,BODY,tz*0.16); const lw1=sp.label?ctx.measureText(sp.label.toUpperCase()).width+10:0; setFont(ctx,800,tz*1.18,HEAD,0.5); const yw=sp.year?ctx.measureText(sp.year).width:0, tw=lw1+yw+th*0.9;
+        el('since',{x:tx,y:pTop-th/2,w:tw,h:th},b=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.2)'; ctx.shadowBlur=10; ctx.shadowOffsetY=3; ctx.fillStyle=P.gold; rr(ctx,b.x,b.y,b.w,b.h,b.h/2); ctx.fill(); ctx.restore();
+          if(sp.label) el('sincelab',{x:tx+th*0.45,y:pTop-tz*0.4,w:lw1-10,h:tz*0.8},q=>{ setFont(ctx,700,tz*0.62,BODY,tz*0.16); ctx.fillStyle=P.band; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(sp.label.toUpperCase(),q.x,q.y+q.h/2+1); });
+          if(sp.year) el('year',{x:tx+th*0.45+lw1,y:pTop-tz*0.66,w:yw,h:tz*1.32},q=>{ setFont(ctx,800,tz*1.18,HEAD,0.5); ctx.fillStyle=P.band; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(sp.year,q.x,q.y+q.h/2+tz*0.06); }); }); }
+      let y=pTop+lbH/2+L.gap*0.9; bLine(ctx,'headline',head,L.pad,y,w,hs,800,HEAD,c.accent,0.5,'left'); y+=hs*1.08;
+      if(fitT){ bLine(ctx,'fitment',fitT,L.pad,y,w,fs,600,BODY,'#ffffff',0,'left'); y+=fs*1.3+L.gap*0.4; }
+      if(pills.length){ bPillRow(ctx,pills,L.pad,w,y,L.pill,L.g,P,'left'); y+=L.pill+L.gap*0.8; }
+      if(fcH){ const n=feats.length, fw=(w-L.g*(n-1))/n; feats.forEach((f,j)=>bFeatRow(ctx,f,{x:L.pad+j*(fw+L.g),y,w:fw,h:fcH},P)); } stdFooter(ctx,W,H,c,'brand'); }}; }
 };
 
 const TPL={
@@ -1982,8 +2143,6 @@ const TPL={
       if(rowH) el('row',{x:(W-rowW)/2,y:yRow,w:rowW,h:rowH},()=>{ let rx=(W-rowW)/2; if(hasE){ slantBanner(ctx,rx,yRow+(rowH-ban.h)/2,label,bsz,LOOK==='site'?'#111111':c.pop,LOOK==='site'?c.accent:'#ffffff'); rx+=ban.w+24; } if(bimg) brandChip(ctx,rx+bw,yRow+(rowH-bh)/2,bh,W*0.4); });
       // stage
       const scx=W/2, scy=stTop+stageH/2, cw=cx1-cx0;
-      const word=((T.headline||'').trim().split(/\s+/).pop()||'').toUpperCase();
-      if(word){ const ws=fitLine(ctx,word,800,HEAD,stageH*0.62,40,W-30,2); ctx.fillStyle=dark?'rgba(255,255,255,.055)':LOOK==='site'?'rgba(0,0,0,.08)':alpha(c.ink,.055); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(word,scx,scy+ws*0.04); }
       const ph=S.photos[0], free=!ph||LOOK==='classic'||ph.transparent;
       const D=Math.min(stageH,cw+(callouts?70:0),W-2*pad);
       if(free){
@@ -2146,7 +2305,7 @@ function drawExtras(ctx,W,H){
 }
 
 function renderPost(ctx,W,H,st,collect){
-  const prev=S, pL=LOOK, pSZ=SZ, pH=HEAD, pB=BODY, pC=CUR_CTX; CUR_CTX=ctx; ELC={}; ELSEEN=new Set(); S=st; LOOK=lookOf(st); SZ={head:1,text:1,foot:1,logo:1,brand:1,photo:1,...(st.sizes||{})}; setFamilies(st.fonts||{head:'Barlow Condensed',body:'Barlow'}); collecting=!!collect; if(collect) hitRects=[];
+  const prev=S, pL=LOOK, pLV=LOOKV, pSZ=SZ, pH=HEAD, pB=BODY, pC=CUR_CTX; CUR_CTX=ctx; ELC={}; ELSEEN=new Set(); S=st; LOOKV=lookOf(st); LOOK=lookBase(LOOKV); SZ={head:1,text:1,foot:1,logo:1,brand:1,photo:1,...(st.sizes||{})}; setFamilies(st.fonts||{head:'Barlow Condensed',body:'Barlow'}); collecting=!!collect; if(collect){ hitRects=[]; TXT_SEEN={}; }
   ctx.save(); ctx.clearRect(0,0,W,H);
   const fn=TPL[st.template]||TPL.showcase; const scales=[1,.93,.86,.79,.72,.65,.58,.52];
   FOOT_TOP=H; for(let i=0;i<scales.length;i++){ const L=fn(ctx,W,H,scales[i]*st.textScale); if(L.ok||i===scales.length-1){ L.draw(); break; } }
@@ -2155,7 +2314,7 @@ function renderPost(ctx,W,H,st,collect){
   drawAddedDecos(ctx,true);
   waButton(ctx,W,H);
   if(collect&&SEL){ const h=selRect(); if(h) drawSel(ctx,h); }
-  ctx.restore(); collecting=false; S=prev; LOOK=pL; SZ=pSZ; HEAD=pH; BODY=pB; CUR_CTX=pC;
+  ctx.restore(); collecting=false; TSTY=null; S=prev; LOOK=pL; LOOKV=pLV; SZ=pSZ; HEAD=pH; BODY=pB; CUR_CTX=pC;
 }
 
 /* ---------- main canvas ---------- */
@@ -2163,7 +2322,7 @@ const cv=$('cv'), cx=cv.getContext('2d');
 let raf=0, thumbTimer=0;
 function render(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
   const f=FORMATS[state.format]; if(cv.width!==f.w||cv.height!==f.h){ cv.width=f.w; cv.height=f.h; }
-  renderPost(cx,f.w,f.h,state,true);
+  renderPost(cx,f.w,f.h,state,true); updTS();
   clearTimeout(thumbTimer); if(!$('p-style').hidden) thumbTimer=setTimeout(renderThumbs,300);
   updateEditing();
 }); }
@@ -2206,11 +2365,11 @@ function selFrame(h){ const r=h.r, q=h.q||[[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+
   const w=Math.hypot(q[1][0]-q[0][0],q[1][1]-q[0][1]), hh=Math.hypot(q[3][0]-q[0][0],q[3][1]-q[0][1]);
   const ux=w>0.01?{x:(q[1][0]-q[0][0])/w,y:(q[1][1]-q[0][1])/w}:{x:1,y:0}, uy=hh>0.01?{x:(q[3][0]-q[0][0])/hh,y:(q[3][1]-q[0][1])/hh}:{x:-ux.y,y:ux.x};
   return {c:{x:(q[0][0]+q[2][0])/2,y:(q[0][1]+q[2][1])/2},w,h:hh,ux,uy}; }
-function selHandles(h){ const f=selFrame(h), ex=f.w/2+6, ey=f.h/2+6, sid=String(h.id), sh=canStretch(sid)&&(h.fit||/^(deco_|add_|tb_)/.test(sid)), tb=sid.startsWith('tb_'), ro=Math.max(56,uiK()*34), L=[];
+function selHandles(h){ const f=selFrame(h), ex=f.w/2+6, ey=f.h/2+6, sid=String(h.id), sh=canStretch(sid), tb=sid.startsWith('tb_'), ro=Math.max(56,uiK()*34), L=[];
   const add=(kind,i,j,lx,ly)=>L.push({kind,i,j,lx,ly,x:f.c.x+f.ux.x*lx+f.uy.x*ly,y:f.c.y+f.ux.y*lx+f.uy.y*ly});
   [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([i,j])=>add('corner',i,j,i*ex,j*ey));
-  // side handles only when the item is big enough along that direction that its middle can still be grabbed to move it
-  const tolC=Math.max(26,uiK()*18); if(sh) [[1,0],[-1,0],[0,1],[0,-1]].filter(([i])=>(!tb||i)&&(i?f.w:f.h)>=2.6*tolC).forEach(([i,j])=>add('side',i,j,i*ex,j*ey));
+  // side handles; when the item is small along that direction they sit beyond the corners, so pressing inside it still moves it
+  const tolC=Math.max(26,uiK()*18); if(sh) [[1,0],[-1,0],[0,1],[0,-1]].filter(([i])=>!tb||i).forEach(([i,j])=>{ const out=(i?f.w:f.h)<2.6*tolC?tolC*1.15:0; add('side',i,j,i*(ex+out),j*(ey+out)); });
   // rotate handle above the frame; below it, or just inside the top edge, when that spot is off the canvas
   const on=ly=>{ const x=f.c.x+f.uy.x*ly, y=f.c.y+f.uy.y*ly; return x>=8&&y>=8&&x<=cv.width-8&&y<=cv.height-8; };
   const ry=[-ey-ro,ey+ro,-ey+ro].find(on)??-ey+ro; add('rot',0,-1,0,ry);
@@ -2230,8 +2389,8 @@ function handleAt(p){ const h=selRect(); if(!h) return null; const H=selHandles(
   const small=(H.f.w<2.6*tol||H.f.h<2.6*tol)&&hitOne(h,p,Math.max(8,uiK()*8));
   H.L.filter(k=>!small||k.kind==='rot').forEach(k=>{ const d=Math.hypot(p.x-k.x,p.y-k.y); if(d<=bd){ bd=d; best=k; } }); return best?{...best,f:H.f}:null; }
 function handleCursor(hd){ if(hd.kind==='rot') return 'grab'; const a=Math.atan2(hd.y-hd.f.c.y,hd.x-hd.f.c.x)*180/Math.PI; return ['ew-resize','nwse-resize','ns-resize','nesw-resize'][Math.round(((a%180)+180)%180/45)%4]; }
-function updSel(){ const tb=selTB(); $('tbCtl').hidden=!tb; if(tb) fillTB(tb); const has=!!SEL, sid=String(SEL||''), isPh=sid.startsWith('photo'), isAdd=sid.startsWith('add_')||!!tb, isDeco=sid.startsWith('deco_')||isAdd; const dd=isAdd?selDeco():null; $('decoCtl').hidden=!dd; if(dd){ $('dcK').value=dd.k||1; $('dcKo').textContent=Math.round((dd.k||1)*100)+'%'; $('dcN').value=dd.n||1; $('dcNo').textContent=Math.round((dd.n||1)*100)+'%'; $('dcNWrap').hidden=!(DECOS[dd.type]||{}).d; $('dcColor').value=dd.color; $('dcOp').value=dd.op??1; $('dcOpo').textContent=Math.round((dd.op??1)*100)+'%'; $('dcRot').value=dd.rot||0; $('dcRoto').textContent=(dd.rot||0)+'°'; $('dcLayer').textContent=dd.back?'Bring to front':'Send behind'; } $('selHide').hidden=!has||isAdd; if(isAdd){ setTimeout(()=>{ $('selHide').hidden=true; }); } $('selReset').hidden=!has; $('selSizeWrap').hidden=!has; $('selHide').hidden=!has; $('selFontWrap').hidden=!has||isPh||isDeco; $('selCrop').hidden=!isPh; $('selCrop').setAttribute('aria-pressed',String(CROP_MODE)); $('selCrop').textContent=CROP_MODE?'✂ Cropping (tap to finish)':'✂ Crop photo'; $('selUncrop').hidden=!(isPh&&getOff(SEL).crop); const t=$('moveTxt');
-  if(has){ t.innerHTML='Selected: <b></b> · drag to move, a corner to resize, '+(isPh&&CROP_MODE?'a side handle to crop, ':canStretch(SEL)?(sid.startsWith('tb_')?'a side handle to change the width, ':'a side handle to stretch, '):'')+'the round handle to rotate (Shift: 15° steps). Tap it again to pick the item underneath (Alt+click on a computer).'; t.querySelector('b').textContent=elName(SEL); const o=getOff(SEL); $('selSize').value=o.s; $('selSizeo').textContent=Math.round(o.s*100)+'%'; const m=curMap(false); $('selFont').value=(m&&m[SEL]&&m[SEL].font)||''; }
+function updSel(){ const tb=selTB(); $('tbCtl').hidden=!tb; if(tb) fillTB(tb); if(typeof updTS==='function') updTS(); const has=!!SEL, sid=String(SEL||''), isPh=sid.startsWith('photo'), isAdd=sid.startsWith('add_')||!!tb, isDeco=sid.startsWith('deco_')||isAdd; const dd=isAdd?selDeco():null; $('decoCtl').hidden=!dd; if(dd){ $('dcK').value=dd.k||1; $('dcKo').textContent=Math.round((dd.k||1)*100)+'%'; $('dcN').value=dd.n||1; $('dcNo').textContent=Math.round((dd.n||1)*100)+'%'; $('dcNWrap').hidden=!(DECOS[dd.type]||{}).d; $('dcColor').value=dd.color; $('dcOp').value=dd.op??1; $('dcOpo').textContent=Math.round((dd.op??1)*100)+'%'; $('dcRot').value=dd.rot||0; $('dcRoto').textContent=(dd.rot||0)+'°'; $('dcLayer').textContent=dd.back?'Bring to front':'Send behind'; } $('selHide').hidden=!has||isAdd; if(isAdd){ setTimeout(()=>{ $('selHide').hidden=true; }); } $('selReset').hidden=!has; $('selSizeWrap').hidden=!has; $('selHide').hidden=!has; $('selFontWrap').hidden=!has||isPh||isDeco; $('selCrop').hidden=!isPh; $('selStretch').hidden=!isPh; $('selCrop').setAttribute('aria-pressed',String(CROP_MODE)); $('selStretch').setAttribute('aria-pressed',String(!CROP_MODE)); $('selCrop').textContent='✂ Crop photo'; $('selUncrop').hidden=!(isPh&&getOff(SEL).crop); const t=$('moveTxt');
+  if(has){ t.innerHTML='Selected: <b></b> · drag to move, a corner to resize, '+(isPh?(CROP_MODE?'a side handle to crop, ':'a side handle to stretch the photo (choose Crop to trim it instead), '):sid.startsWith('tb_')?'a side handle to change the width, ':'a side handle to change the width or height, ')+'the round handle to rotate (Shift: 15° steps). Tap it again to pick the item underneath (Alt+click on a computer).'; t.querySelector('b').textContent=elName(SEL); const o=getOff(SEL); $('selSize').value=o.s; $('selSizeo').textContent=Math.round(o.s*100)+'%'; const m=curMap(false); $('selFont').value=(m&&m[SEL]&&m[SEL].font)||''; }
   else t.textContent='Tap any item on the post (text, photo, logo or shape) to move, resize, restyle or hide it.';
   const m=curMap(false), hid=m?Object.keys(m).filter(k=>m[k]&&m[k].hide):[]; $('hiddenRow').hidden=!hid.length; $('hiddenList').innerHTML=hid.map(k=>`<button type="button" data-unhide="${esc(k)}">${esc(elName(k))} ✕</button>`).join(''); }
 let TAPC=null; // last tap that changed the selection: {p,id}
@@ -2247,6 +2406,7 @@ cv.addEventListener('pointerdown',e=>{ const p=canvasPoint(e); const hd=handleAt
       else if(sid.startsWith('tb_')){ const b=selTB(), pin={x:f.c.x-f.ux.x*hd.i*f.w/2-f.uy.x*f.h/2,y:f.c.y-f.ux.y*hd.i*f.w/2-f.uy.y*f.h/2};
         drag={kind:'tbw',id:SEL,b,i:-hd.i,u,p0:p,L0,s:o.s,pin,inv}; }
       else { // stretch along one axis; the opposite side stays where it is
+        if(sid.startsWith('photo')&&!o.warp){ const m=curMap(true); m[SEL]={...(m[SEL]||{}),warp:true}; }
         const A={x:f.c.x-u.x*L0/2,y:f.c.y-u.y*L0/2}; drag={kind:'side',id:SEL,k:hd.i?'sx':'sy',k0:hd.i?o.sx:o.sy,u,L0,A,t0:(p.x-A.x)*u.x+(p.y-A.y)*u.y,c:f.c,dx:o.dx,dy:o.dy,inv}; } }
     else drag={kind:'rot',id:SEL,c:f.c,a0:Math.atan2(p.y-f.c.y,p.x-f.c.x),r0:getRot(SEL)}; }
   else { const all=hitsAt(p), si=SEL?all.findIndex(x=>x.kind==='el'&&x.id===SEL):-1; let h=all[0]||null, cyc=null;
@@ -2296,6 +2456,51 @@ let tbTyping=0; $('tbText').addEventListener('input',e=>{ const b=selTB(); if(!b
 $('tbAlign').addEventListener('click',e=>{ const x=e.target.closest('[data-al]'); const b=selTB(); if(!x||!b) return; pushUndo(); const L=tbLayout(CUR_CTX||cv.getContext('2d'),b,cv.width,cv.height); const left=L.x; b.align=x.dataset.al; const W=cv.width; b.x=(b.align==='center'?left+L.w/2:b.align==='right'?left+L.w:left)/W; fillTB(b); render(); });
 $('tbBold').onclick=()=>{ const b=selTB(); if(!b) return; pushUndo(); b.bold=!b.bold; fillTB(b); render(); };
 $('tbItal').onclick=()=>{ const b=selTB(); if(!b) return; pushUndo(); b.italic=!b.italic; fillTB(b); render(); };
+/* ---------- text style toolbar ---------- */
+const TS_COLS=[['','Unchanged'],['ink','Theme dark'],['blue','Theme blue'],['pop','Theme orange'],['accent','Theme gold'],['paper','Theme light'],['white','White'],['black','Black'],['#d32f2f','Red'],['#2e7d32','Green'],['#1565c0','Blue'],['#f9a825','Yellow'],['#6a1b9a','Purple'],['transparent','None (outline only)']];
+const TS_PRESETS={none:['Normal (clear)',{}],bold:['Bold',{b:true}],boldpop:['Bold orange',{b:true,color:'pop'}],gold:['Bold gold',{b:true,color:'accent'}],hlgold:['Highlight gold',{hl:'accent',color:'ink'}],hlpop:['Highlight orange',{hl:'pop',color:'white'}],
+  outline:['Outlined',{outline:'ink',ow:0.1,color:'white'}],hollow:['Hollow',{outline:'pop',ow:0.06,color:'transparent'}],shadow:['Drop shadow',{shadow:true}],neon:['Neon glow',{glow:'accent',color:'white'}],
+  under:['Underlined orange',{u:true,color:'pop'}],spaced:['Spaced capitals',{cs:'upper',ls:0.12}],italic:['Italic blue',{i:true,color:'blue'}],stamp:['Stamp',{b:true,cs:'upper',outline:'pop',ow:0.05,color:'pop',ls:0.06}],faded:['Faded',{op:0.55}]};
+let TS_PICK=new Set(), TS_FOR=null, TS_CLIP=null, TS_KEY='';
+function tsWordsOf(id){ const a=TXT_SEEN[id]||[], seen=new Set(); return a.filter(w=>!seen.has(w.i)&&seen.add(w.i)); }
+function tsGet(id){ const m=curMap(false); return (m&&m[id]&&m[id].ts)||null; }
+function tsCur(){ const ts=tsGet(SEL)||{}, all=ts.all||{}; if(!TS_PICK.size) return all; const i=[...TS_PICK][0], m=(ts.w||{})[i]; return {...all,...(m||{})}; }
+// write the change into every size of this template, so square, 4:5 and story match
+function tsWrite(fn){ if(!SEL) return; pushUndo(); state.offsets=state.offsets||{}; const T=state.offsets[state.template]||(state.offsets[state.template]={}); const words=tsWordsOf(SEL);
+  Object.keys(FORMATS).forEach(f=>{ const m=T[f]||(T[f]={}); const o={...(m[SEL]||{})}; const ts={all:{...((o.ts||{}).all||{})},w:{...((o.ts||{}).w||{})}};
+    if(TS_PICK.size) TS_PICK.forEach(i=>{ const wd=words.find(w=>w.i===i); const cur={...(ts.w[i]||{}),t:wd?wd.t:((ts.w[i]||{}).t||'')}; fn(cur,true); ts.w[i]=cur; }); else fn(ts.all,false);
+    Object.keys(ts.w).forEach(i=>{ const w=ts.w[i]; TS_KEYS.forEach(k=>{ if(w[k]===undefined||w[k]===null||w[k]==='') delete w[k]; }); if(Object.keys(w).length<=1) delete ts.w[i]; });
+    TS_KEYS.forEach(k=>{ if(ts.all[k]===undefined||ts.all[k]===null||ts.all[k]==='') delete ts.all[k]; });
+    if(Object.keys(ts.all).length||Object.keys(ts.w).length) o.ts=ts; else delete o.ts; m[SEL]=o; });
+  render(); updTS(); }
+function tsToggle(k){ const on=!tsCur()[k]; tsWrite((st,word)=>{ if(on) st[k]=true; else if(word&&(tsGet(SEL)?.all||{})[k]) st[k]=false; else delete st[k]; }); }
+function tsSet(patch){ tsWrite(st=>{ Object.entries(patch).forEach(([k,v])=>{ if(v===''||v===null||v===undefined) delete st[k]; else st[k]=v; }); }); }
+function fillTSSelects(){ const o=TS_COLS.map(([v,n])=>`<option value="${v}">${n}</option>`).join(''); ['tsColor','tsHl','tsOut','tsGlow'].forEach(id=>{ $(id).innerHTML=(id==='tsColor'?o:o.replace('Unchanged','None').replace('<option value="transparent">None (outline only)</option>','')); });
+  $('tsPreset').innerHTML='<option value="">Choose…</option>'+Object.entries(TS_PRESETS).map(([k,[n]])=>`<option value="${k}">${n}</option>`).join(''); }
+function updTS(){ const words=SEL?tsWordsOf(SEL):[]; const show=!!SEL&&words.length>0&&!String(SEL).startsWith('photo'); $('tsCtl').hidden=!show; if(!show){ TS_PICK.clear(); TS_FOR=null; TS_KEY=''; return; }
+  if(TS_FOR!==SEL){ TS_PICK.clear(); TS_FOR=SEL; } [...TS_PICK].forEach(i=>{ if(!words.some(w=>w.i===i)) TS_PICK.delete(i); });
+  // rebuild only when something changed, so a tap is never lost to a re-render
+  const key=[SEL,words.map(w=>w.i+':'+w.t).join('|'),JSON.stringify(tsGet(SEL)),[...TS_PICK].join(','),!!TS_CLIP].join('#'); if(key===TS_KEY) return; TS_KEY=key;
+  const ts=tsGet(SEL)||{}, W=ts.w||{};
+  $('tsWords').innerHTML=`<button type="button" class="ts-all" data-tsw="all" aria-pressed="${!TS_PICK.size}">Whole text</button>`+words.map(w=>`<button type="button" data-tsw="${w.i}" aria-pressed="${TS_PICK.has(w.i)}"${W[w.i]?' style="font-weight:800"':''}>${esc(w.t)}</button>`).join('');
+  const st=tsCur(); [['tsB','b'],['tsI','i'],['tsU','u'],['tsS','s'],['tsSh','shadow']].forEach(([id,k])=>$(id).setAttribute('aria-pressed',String(!!st[k])));
+  $('tsCase').value=st.cs||''; $('tsColor').value=st.color||''; $('tsHl').value=st.hl||''; $('tsOut').value=st.outline||''; $('tsGlow').value=st.glow||'';
+  $('tsLs').value=st.ls||0; $('tsLso').textContent=(+(st.ls||0)).toFixed(2); $('tsOp').value=st.op??1; $('tsOpo').textContent=Math.round((st.op??1)*100)+'%'; $('tsPreset').value='';
+  $('tsHint').textContent=TS_PICK.size?`Styling ${TS_PICK.size} picked word${TS_PICK.size>1?'s':''} in every size.`:'Tap words to style only those. With no words picked, the whole text changes (in every size).'; $('tsPaste').disabled=!TS_CLIP; }
+fillTSSelects();
+$('tsWords').addEventListener('click',e=>{ const b=e.target.closest('[data-tsw]'); if(!b) return; const v=b.dataset.tsw; if(v==='all') TS_PICK.clear(); else { const i=+v; TS_PICK.has(i)?TS_PICK.delete(i):TS_PICK.add(i); } updTS(); });
+$('tsB').onclick=()=>tsToggle('b'); $('tsI').onclick=()=>tsToggle('i'); $('tsU').onclick=()=>tsToggle('u'); $('tsS').onclick=()=>tsToggle('s'); $('tsSh').onclick=()=>tsToggle('shadow');
+$('tsCase').onchange=e=>tsSet({cs:e.target.value}); $('tsColor').onchange=e=>tsSet({color:e.target.value}); $('tsHl').onchange=e=>tsSet({hl:e.target.value});
+$('tsOut').onchange=e=>tsSet({outline:e.target.value,ow:e.target.value?(tsCur().ow||0.08):''}); $('tsGlow').onchange=e=>tsSet({glow:e.target.value});
+let tsSlide=null; [['tsLs','ls',v=>+v===0?'':+v],['tsOp','op',v=>+v>=1?'':+v]].forEach(([id,k,conv])=>{ $(id).addEventListener('input',e=>{ if(tsSlide!==id){ tsSlide=id; tsSet({[k]:conv(e.target.value)}); } else { tsWriteQuiet(k,conv(e.target.value)); } }); $(id).addEventListener('change',()=>{ tsSlide=null; }); });
+// slider drags: one undo step for the whole drag
+function tsWriteQuiet(k,v){ const T=state.offsets[state.template]; if(!T) return; const words=tsWordsOf(SEL); Object.keys(FORMATS).forEach(f=>{ const o=T[f]&&T[f][SEL]; if(!o||!o.ts) return; const set=st=>{ if(v===''||v===null) delete st[k]; else st[k]=v; };
+  if(TS_PICK.size) TS_PICK.forEach(i=>{ const wd=words.find(w=>w.i===i); o.ts.w[i]={...(o.ts.w[i]||{}),t:wd?wd.t:''}; set(o.ts.w[i]); }); else set(o.ts.all); }); render(); updTS(); }
+$('tsPreset').onchange=e=>{ const p=TS_PRESETS[e.target.value]; if(!p) return; const v=p[1]; tsWrite(st=>{ TS_KEYS.forEach(k=>delete st[k]); Object.assign(st,v); }); };
+$('tsCopy').onclick=()=>{ const st=tsCur(); TS_CLIP={}; TS_KEYS.forEach(k=>{ if(st[k]!==undefined) TS_CLIP[k]=st[k]; }); updTS(); toast('Style copied. Pick other text and press Paste style.'); };
+$('tsPaste').onclick=()=>{ if(!TS_CLIP) return; const v=TS_CLIP; tsWrite(st=>{ TS_KEYS.forEach(k=>delete st[k]); Object.assign(st,v); }); };
+$('tsClear').onclick=()=>tsWrite(st=>{ TS_KEYS.forEach(k=>delete st[k]); });
+
 $('tbDup').onclick=()=>{ const b=selTB(); if(!b) return; pushUndo(); const id=Math.random().toString(36).slice(2,8); const o=getOff(SEL); tbList(true).push({...b,id,x:b.x+(o.dx+30)/cv.width,y:b.y+(o.dy+30)/cv.height}); const cp={}; if(o.s!==1) cp.s=o.s; if(o.rot) cp.rot=o.rot; if(Object.keys(cp).length) curMap(true)['tb_'+id]=cp; SEL='tb_'+id; updSel(); render(); };
 $('tbDel').onclick=()=>{ const l=tbList(false), i=l.findIndex(b=>'tb_'+b.id===SEL); if(i<0) return; pushUndo(); l.splice(i,1); const m=curMap(false); if(m) delete m[SEL]; SEL=null; updSel(); render(); };
 cv.addEventListener('dblclick',()=>{ if(selTB()){ const ta=$('tbText'); ta.focus(); ta.select(); } });
@@ -2319,9 +2524,10 @@ $('dcDup').onclick=()=>{ const d=selDeco(); if(!d) return; pushUndo(); const o=g
 $('dcDel').onclick=()=>{ const l=decoList(false); if(!l) return; pushUndo(); const i=l.findIndex(d=>'add_'+d.id===SEL); if(i>=0) l.splice(i,1); const m=curMap(false); if(m) delete m[SEL]; SEL=null; updSel(); render(); };
 $('selHide').onclick=()=>{ if(!SEL) return; pushUndo(); const m=curMap(true); m[SEL]={...(m[SEL]||{}),hide:true}; SEL=null; updSel(); render(); toast('Item hidden. Tap its name under the post to bring it back.'); };
 $('hiddenList').addEventListener('click',e=>{ const b=e.target.closest('[data-unhide]'); if(!b) return; pushUndo(); const m=curMap(false); if(m&&m[b.dataset.unhide]){ const n={...m[b.dataset.unhide]}; delete n.hide; m[b.dataset.unhide]=n; } updSel(); render(); });
-$('selCrop').onclick=()=>{ CROP_MODE=!CROP_MODE; updSel(); render(); };
+$('selCrop').onclick=()=>{ CROP_MODE=true; updSel(); render(); };
+$('selStretch').onclick=()=>{ CROP_MODE=false; updSel(); render(); };
 $('selUncrop').onclick=()=>{ if(!SEL) return; pushUndo(); setCrop(SEL,{}); updSel(); render(); };
-$('selReset').onclick=()=>{ if(!SEL) return; pushUndo(); const m=curMap(false); if(m) delete m[SEL]; updSel(); render(); };
+$('selReset').onclick=()=>{ if(!SEL) return; pushUndo(); const m=curMap(false); if(m){ const ts=m[SEL]&&m[SEL].ts; delete m[SEL]; if(ts) m[SEL]={ts}; } updSel(); render(); }; // position, size and rotation reset; the text style stays (Clear style removes it in every size)
 $('allReset').onclick=()=>{ pushUndo(); const m=curMap(false); if(m) for(const k in m) delete m[k]; SEL=null; updSel(); render(); toast('Layout reset to the template for this size'); };
 $('selSize').addEventListener('pointerdown',pushUndo); $('selSize').addEventListener('keydown',pushUndo);
 $('selSize').addEventListener('input',e=>{ if(!SEL) return; setScale(SEL,parseFloat(e.target.value)); $('selSizeo').textContent=Math.round(parseFloat(e.target.value)*100)+'%'; render(); });
@@ -2340,7 +2546,7 @@ cv.addEventListener('pointerup',endDrag); cv.addEventListener('pointercancel',en
 function renderThumbs(){
   document.querySelectorAll('.tpl canvas').forEach(c=>{ const k=c.dataset.t, f=FORMATS[state.format], tw=240, sc=tw/f.w; c.width=tw; c.height=Math.round(f.h*sc);
     const ctx=c.getContext('2d'); ctx.setTransform(sc,0,0,sc,0,0); const need=TEMPLATES[k].adapt?Math.max(1,Math.min(3,uiGroup)):TEMPLATES[k].n; const photos=state.photos.slice(0,need); let j=0; while(photos.length<need&&j<SAMPLE_PH.length){ const sp=SAMPLE_PH[j++]; if(!photos.some(p=>p.sampleKey===sp.sampleKey)) photos.push(sp); }
-    renderPost(ctx,f.w,f.h,{...state,template:k,photos},false); });
+    renderPost(ctx,f.w,f.h,{...state,template:k,photos,fonts:{...state.fonts,head:TEMPLATES[k].head||state.fonts.head}},false); });
 }
 
 /* ---------- UI ---------- */
@@ -2433,8 +2639,8 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button'); if(!b) return;
   if(b.dataset.tab){ document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t===b)); ['write','style','caption'].forEach(k=>$('p-'+k).hidden=k!==b.dataset.tab); if(b.dataset.tab==='style'){ if(!b.dataset.keep) uiGroup=TEMPLATES[state.template]?.n||1; renderTplList(); renderThumbs(); } return; }
   if(b.dataset.f){ state.format=b.dataset.f; SEL=null; updSel(); syncUI(); render(); return; }
-  if(b.dataset.look){ state.look=b.dataset.look; syncUI(); render(); renderThumbs(); return; }
-  if(b.dataset.t&&b.classList.contains('tpl')){ state.template=b.dataset.t; SEL=null; updSel(); syncUI(); render(); return; }
+  if(b.dataset.look){ state.look=b.dataset.look; const lt=LOOKS[b.dataset.look]&&LOOKS[b.dataset.look].theme, t=THEMES[lt]; if(t){ state.theme=lt; state.colors={ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper}; } syncUI(); render(); renderThumbs(); return; }
+  if(b.dataset.t&&b.classList.contains('tpl')){ state.template=b.dataset.t; const hf=TEMPLATES[b.dataset.t].head; if(hf&&state.fonts.head!==hf){ state.fonts.head=hf; loadFont(hf).then(()=>{ render(); renderThumbs(); }); } SEL=null; updSel(); syncUI(); render(); return; }
   if(b.dataset.th){ state.theme=b.dataset.th; const t=THEMES[b.dataset.th]; state.colors={ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper}; syncUI(); render(); return; }
   if(b.dataset.pick){ const p=ASSETS.photos[b.dataset.pick]; state.photos.push(await makePhoto({src:p.src,label:p.label,sampleKey:b.dataset.pick})); state.active=state.photos.length-1; syncUI(); render(); return; }
   if(b.dataset.sel!==undefined){ state.active=+b.dataset.sel; syncUI(); return; }
@@ -2734,12 +2940,12 @@ function ideaTexts(d){ return (d.tags||[]).map(x=>({id:x.id,...TB_PRESETS[x.pres
 function ideaAddons(d){ const keep=a=>(a||[]).filter(x=>!x.ai), decos={...state.decos}, texts={...state.texts}, cur=(state.decos&&state.decos[d.template])||{};
   decos[d.template]={...cur}; Object.keys(FORMATS).forEach(fmt=>{ decos[d.template][fmt]=keep(cur[fmt]).concat(ideaDecosFor(d,fmt)); });
   texts[d.template]=keep(state.texts&&state.texts[d.template]).concat(ideaTexts(d)); return {decos,texts}; }
-function ideaState(d){ const t=THEMES[d.theme]||THEMES.parco; return {...state,template:d.template,look:d.look||'auto',theme:d.theme,colors:{ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper},fonts:{head:d.head||state.fonts.head,body:d.body||state.fonts.body},footStyle:d.foot||'auto',offsets:{},...ideaAddons(d)}; }
-function brandIdea(i){ const ks=Object.keys(TEMPLATES).filter(t=>TEMPLATES[t].brand), t=ks.filter(k=>k!==state.template)[i%3]||ks[0], navy=i%2===1;
-  return {template:t,look:navy?'night':'classic',theme:navy?'navy':'forest',head:'Barlow Condensed',body:'Barlow',foot:'brand',name:TEMPLATES[t].name+' · '+(navy?'Navy':'Green'),why:"PARCO's approved poster style: logo card, one-line headline, photo cards and feature cards."}; }
+function ideaState(d){ const t=THEMES[d.theme]||THEMES.parco; /* colour looks bring their own theme (lookTheme) */ return {...state,template:d.template,look:d.look||'auto',theme:d.theme,colors:{ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper},fonts:{head:d.head||state.fonts.head,body:d.body||state.fonts.body},footStyle:d.foot||'auto',offsets:{},...ideaAddons(d)}; }
+function brandIdea(i){ const n=Math.max(1,Math.min(3,state.photos.length||1)), ks=Object.keys(TEMPLATES).filter(t=>TEMPLATES[t].brand&&tplFits(TEMPLATES[t],n)), oth=ks.filter(k=>k!==state.template), t=oth[i%Math.max(1,oth.length)]||ks[0], navy=i%2===1;
+  return {template:t,look:navy?'night':'classic',theme:navy?'navy':'forest',head:TEMPLATES[t].head||'Barlow Condensed',body:'Barlow',foot:'brand',name:TEMPLATES[t].name+' · '+(navy?'Navy':'Green'),why:"PARCO's approved poster style: logo card, one-line headline, photo cards and feature cards."}; }
 function localIdeas(n){ const k0=Math.max(1,Math.min(4,state.photos.length||1)), out0=[]; if(k0<=3) for(let j=0;j<Math.min(2,n);j++) out0.push(brandIdea(ideaSeen.length+j)); n-=out0.length;
-  const fit=Object.keys(TEMPLATES).filter(k=>tplFits(TEMPLATES[k],k0)&&!TEMPLATES[k].brand&&k!==state.template); const looks=['classic','night','site'], th=Object.keys(THEMES), heads=['Barlow Condensed','Oswald','Teko','Bebas Neue','Saira Condensed','Anton','Rajdhani','Fjalla One'];
-  const out=[]; let i=ideaSeen.length; while(out.length<n){ const t=fit.length?fit[i%fit.length]:state.template; out.push({template:t,look:looks[(i+1)%3],theme:th[(i*2)%th.length],head:heads[i%heads.length],body:'Barlow',foot:'auto',name:TEMPLATES[t].name+' · '+LOOKS[looks[(i+1)%3]].name,why:'A fresh mix of layout, colours and type for the same post.'}); i++; } return out0.concat(out); }
+  const fit=Object.keys(TEMPLATES).filter(k=>tplFits(TEMPLATES[k],k0)&&!TEMPLATES[k].brand&&k!==state.template); const looks=Object.keys(LOOKS), th=Object.keys(THEMES), heads=['Barlow Condensed','Oswald','Teko','Bebas Neue','Saira Condensed','Anton','Rajdhani','Fjalla One'];
+  const out=[]; let i=ideaSeen.length; while(out.length<n){ const t=fit.length?fit[i%fit.length]:state.template; out.push({template:t,look:looks[(i+1)%looks.length],theme:lookTheme(looks[(i+1)%looks.length])||th[(i*2)%th.length],head:heads[i%heads.length],body:'Barlow',foot:'auto',name:TEMPLATES[t].name+' · '+LOOKS[looks[(i+1)%looks.length]].name,why:'A fresh mix of layout, colours and type for the same post.'}); i++; } return out0.concat(out); }
 function ideaBrief(){ const t=$('ideasBrief'); return t?t.value.replace(/\s+/g,' ').trim().slice(0,400):''; }
 async function getIdeas(){ const brief=ideaBrief();
   const n=Math.max(1,Math.min(4,state.photos.length||1)); const opts=Object.entries(TEMPLATES).filter(([k,t])=>tplFits(t,n)).map(([k,t])=>`${k}: ${t.name} — ${t.note}`).join('\n');
@@ -2749,7 +2955,7 @@ Product: ${state.product||state.text.headline}
 Write-up: ${state.writeup.slice(0,600)}
 Photos: ${state.photos.map(p=>p.label||'product').join(', ')||'one product'}
 Allowed templates (use the key):\n${opts}
-Looks: classic (white, indigo & orange), night (deep indigo, amber glow), site (catalog amber with black hazard stripes)
+Looks: ${Object.entries(LOOKS).map(([k,l])=>k+' ('+l.note+')').join(', ')}
 Colour themes: ${Object.entries(THEMES).map(([k,t])=>k+' ('+t.name+')').join(', ')}
 Headline fonts: ${FONTS_ALL.join(', ')}
 Contact styles: brand, band, plain, navy, dark, light
@@ -2760,11 +2966,11 @@ Decoration colours: ${Object.keys(DECO_COLORS).join(', ')}
 Tags (optional, up to ${IDEA_MAX.tags} per idea) are short text labels. Tag styles: ${Object.keys(TB_PRESETS).join(', ')}
 Tag rules: copy the words from the write-up or product name (a brand, part number, machine name or stock line). Never mention prices, discounts, offers, sale or "buy now". Use "Ready stock" only if the write-up says ready stock.
 Positions are fractions of the post (0 to 1, top left is 0,0). For decorations x,y is the centre, w is the width as a fraction of the post width (0.05 to 0.6), rot is degrees (-45 to 45), back true puts it behind the photos and text. For tags x is the centre and y is the top edge. Keep everything clear of the product photo centre, the headline and the contact footer (y above 0.82).
-Return only JSON: {"ideas":[{"name":"short catchy name","template":"key","look":"classic|night|site","theme":"key","head":"font","body":"font","foot":"style","why":"one sentence on why this suits the product","decos":[{"type":"key","color":"key","x":0.85,"y":0.15,"w":0.18,"rot":0,"back":false}],"tags":[{"text":"words from the write-up","preset":"pill","x":0.5,"y":0.08}]}]} with exactly 3 ideas that differ in template or look.`;
+Return only JSON: {"ideas":[{"name":"short catchy name","template":"key","look":"${Object.keys(LOOKS).join('|')}","theme":"key","head":"font","body":"font","foot":"style","why":"one sentence on why this suits the product","decos":[{"type":"key","color":"key","x":0.85,"y":0.15,"w":0.18,"rot":0,"back":false}],"tags":[{"text":"words from the write-up","preset":"pill","x":0.5,"y":0.08}]}]} with exactly 3 ideas that differ in template or look.`;
   try{ const o={modelTier:'default',cache:false}; try{ const ims=[]; for(let i=0;i<Math.min(2,state.photos.length);i++) ims.push(await photoBlob(state.photos[i],512,'image/jpeg')); if(ims.length) o.images=ims; }catch{}
     let r; try{ r=await sample.json(prompt,o); }catch(e){ if(o.images&&e&&['images_unavailable','image_rejected','prompt_too_large'].includes(e.code)){ delete o.images; r=await sample.json(prompt,o); } else throw e; }
     let list=(r&&r.ideas)||[];
-    list=list.filter(d=>d&&TEMPLATES[d.template]).map(d=>({...d,look:LOOKS[d.look]?d.look:'classic',theme:THEMES[d.theme]?d.theme:'parco',head:FONTS_ALL.includes(d.head)?d.head:'Barlow Condensed',body:FONTS_ALL.includes(d.body)?d.body:'Barlow',foot:['brand','band','plain','navy','dark','light'].includes(d.foot)?d.foot:'auto',...cleanIdeaExtras(d,state.product+' '+state.writeup)}));
+    list=list.filter(d=>d&&TEMPLATES[d.template]).map(d=>({...d,look:LOOKS[d.look]?d.look:'classic',theme:lookTheme(d.look)||(THEMES[d.theme]?d.theme:'parco'),head:FONTS_ALL.includes(d.head)?d.head:'Barlow Condensed',body:FONTS_ALL.includes(d.body)?d.body:'Barlow',foot:['brand','band','plain','navy','dark','light'].includes(d.foot)?d.foot:'auto',...cleanIdeaExtras(d,state.product+' '+state.writeup)}));
     if(n<=3&&!list.some(d=>TEMPLATES[d.template].brand)) list=[brandIdea(ideaSeen.length)].concat(list);
     if(list.length<3) list=list.concat(localIdeas(3-list.length)); return {list:list.slice(0,3),ai:true}; }
   catch(e){ return {list:localIdeas(3),ai:false,err:e&&e.code}; }
@@ -3267,7 +3473,7 @@ $('uForm').addEventListener('submit',async e=>{
   { const t=TEMPLATES[state.template], n=Math.max(1,Math.min(4,state.photos.length||1)); uiGroup=tplFits(t,n)?n:t.n; }
   syncUI(); render();
   setStatus('Example post loaded from your sample. Replace the photo and write-up with your own product, then press Generate.');
-  const faces=['700 40px Caveat','800 40px "Barlow Condensed"','italic 800 40px "Barlow Condensed"','700 40px "Barlow Condensed"','500 20px Barlow','600 20px Barlow','700 20px Barlow'];
+  const faces=['700 40px Oswald','700 40px Teko','400 40px Anton','700 40px Caveat','800 40px "Barlow Condensed"','italic 800 40px "Barlow Condensed"','700 40px "Barlow Condensed"','500 20px Barlow','600 20px Barlow','700 20px Barlow'];
   try{ await Promise.race([Promise.all(faces.map(f=>document.fonts.load(f))),new Promise(r=>setTimeout(r,4000))]); }catch{}
   render(); if(document.fonts&&document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',()=>render());
 })();

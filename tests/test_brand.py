@@ -161,3 +161,47 @@ def test_ideas_lead_with_brand_and_use_the_brief(page, ai):
     assert any("green theme, premium look for Hino parts" in p for p in seen)
     first = page.evaluate("() => ideaSeen[ideaSeen.length-3]")
     assert first["template"].startswith("brand") and first["theme"] in ("forest", "navy")
+
+
+def test_small_text_pieces_visibly_stretch(page):
+    page.evaluate(SETUP)
+    bad = page.evaluate("""() => { const out=[], F=FORMATS.square, c=document.createElement('canvas'); c.width=F.w; c.height=F.h; const x=c.getContext('2d'); state.wm.mode='off'; state.format='square';
+      const draw=()=>{ x.clearRect(0,0,F.w,F.h); renderPost(x,F.w,F.h,state,false); return x.getImageData(0,0,F.w,F.h).data; };
+      const ink=(A,B)=>{ let x0=1e9,x1=-1; for(let y=0;y<F.h;y+=2) for(let xx=0;xx<F.w;xx++){ const i=(y*F.w+xx)*4; if(A[i]!==B[i]||A[i+1]!==B[i+1]||A[i+2]!==B[i+2]){ if(xx<x0)x0=xx; if(xx>x1)x1=xx; } } return x1<0?0:x1-x0; };
+      for(const t of %s){ state.template=t; for(const id of ['sincelab','year','pk','pv','ftext','feat','headline','fitment']){ state.offsets={[t]:{square:{[id]:{hide:true}}}}; const A=draw(); state.offsets={}; const B=draw();
+          state.offsets={[t]:{square:{[id]:{sx:1.4}}}}; const C=draw(); state.offsets={}; const w1=ink(A,B), w2=ink(A,C); if(w1>4&&w1<900&&w2<w1*1.2) out.push([t,id,w1,w2]); } }
+      return out; }""" % BRAND)
+    assert bad == []
+
+
+def test_long_headline_is_squeezed_not_cut(page):
+    page.evaluate(SETUP)
+    page.evaluate("() => { state.text.headline='Heavy Duty Oil Cooler Assembly With Cover And Gasket Kit For Hino J05E Engines'; state.template='brandSplit'; render(); }")
+    for fmt in FORMATS:
+        set_format(page, fmt)
+        page.wait_for_timeout(200)
+        words = page.evaluate("() => (TXT_SEEN.headline||[]).map(w=>w.t)")
+        assert not any(w.endswith("…") for w in words) and words[-1] == "ENGINES", (fmt, words)
+        r = page.evaluate("() => hitRects.find(h=>h.id==='headline').r")
+        assert r["x"] + r["w"] <= page.evaluate("() => cv.width") + 1
+
+
+def test_reset_keeps_text_style_in_every_size(page):
+    page.evaluate(SETUP)
+    page.evaluate("() => { state.template='brandHero'; render(); SEL='headline'; updSel(); render(); }")
+    page.wait_for_timeout(250)
+    page.click("#tsB")
+    page.evaluate("() => setOff('headline',30,0)")
+    page.click("#selReset")
+    for fmt in FORMATS:
+        o = page.evaluate(f"() => state.offsets.brandHero['{fmt}'].headline")
+        assert o["ts"]["all"]["b"] is True and not o.get("dx")
+
+
+def test_styles_work_on_every_template(page):
+    page.evaluate(SETUP)
+    res = page.evaluate("""async () => { const out=[]; for(const t of Object.keys(TEMPLATES)){ state.template=t; state.offsets={}; SEL=null; render(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+        const ids=Object.keys(TXT_SEEN); for(const id of ids){ const w=tsWordsOf(id); if(new Set(w.map(x=>x.i)).size!==w.length) out.push(['dup',t,id]);
+          SEL=id; TS_PICK=new Set(); tsSet({b:true,hl:'accent',u:true,outline:'pop',ow:0.05}); TS_PICK=new Set([w[0].i]); tsSet({color:'pop',i:true}); }
+        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); if(!ids.length) out.push(['notext',t]); } SEL=null; return out; }""")
+    assert res == []
