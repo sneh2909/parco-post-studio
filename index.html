@@ -520,7 +520,7 @@ details.more input[type=text],details.more textarea{background:var(--panel)}
         <div class="grp" id="tbAlign"><button type="button" data-al="left">Left</button><button type="button" data-al="center">Centre</button><button type="button" data-al="right">Right</button></div>
         <div class="grp"><button type="button" id="tbBold"><b>B</b></button><button type="button" id="tbItal"><i style="background:none;padding:0;font-style:italic">I</i></button></div>
         <button class="btn sm" type="button" id="tbDup">Duplicate</button><button class="btn sm danger" type="button" id="tbDel">Delete</button>
-      </div><span id="decoCtl" hidden style="display:contents"><label class="f" style="flex:0 1 130px">Colour<select id="dcColor"></select></label><div class="rng" style="flex:1 1 200px"><span>Strength</span><input type="range" id="dcK" min="0.3" max="2.5" step="0.01"><output id="dcKo"></output></div><div class="rng" id="dcNWrap" style="flex:1 1 200px"><span>Amount</span><input type="range" id="dcN" min="0.4" max="2.5" step="0.01"><output id="dcNo"></output></div><div class="rng" style="flex:1 1 200px"><span>Fade</span><input type="range" id="dcOp" min="0.1" max="1" step="0.01"><output id="dcOpo"></output></div><div class="rng" style="flex:1 1 200px"><span>Rotate</span><input type="range" id="dcRot" min="-180" max="180" step="1"><output id="dcRoto"></output></div><button class="btn sm" type="button" id="dcLayer">Send behind</button><button class="btn sm" type="button" id="dcDup">Duplicate</button><button class="btn sm danger" type="button" id="dcDel">Delete</button></span><button class="btn sm" type="button" id="selHide" hidden>Hide item</button><button class="btn sm" type="button" id="selReset" hidden>Reset this item</button><button class="btn sm" type="button" id="allReset">Reset layout</button></div>
+      </div><span id="decoCtl" hidden style="display:contents"><label class="f" style="flex:0 1 130px">Colour<select id="dcColor"></select></label><div class="rng" style="flex:1 1 200px"><span>Strength</span><input type="range" id="dcK" min="0.3" max="2.5" step="0.01"><output id="dcKo"></output></div><div class="rng" id="dcNWrap" style="flex:1 1 200px"><span>Amount</span><input type="range" id="dcN" min="0.4" max="2.5" step="0.01"><output id="dcNo"></output></div><div class="rng" style="flex:1 1 200px"><span>Fade</span><input type="range" id="dcOp" min="0.1" max="1" step="0.01"><output id="dcOpo"></output></div><div class="rng" style="flex:1 1 200px"><span>Rotate</span><input type="range" id="dcRot" min="-180" max="180" step="1"><output id="dcRoto"></output></div><button class="btn sm" type="button" id="dcLayer">Send behind</button><button class="btn sm" type="button" id="dcDup">Duplicate</button><button class="btn sm danger" type="button" id="dcDel">Delete</button></span><button class="btn sm" type="button" id="selHide" hidden>Hide item</button><button class="btn sm" type="button" id="selCrop" hidden aria-pressed="false">✂ Crop photo</button><button class="btn sm" type="button" id="selUncrop" hidden>Remove crop</button><button class="btn sm" type="button" id="selReset" hidden>Reset this item</button><button class="btn sm" type="button" id="allReset">Reset layout</button></div>
       <div class="mb-row" id="hiddenRow" hidden><span>Hidden:</span><div class="grp" id="hiddenList"></div></div>
     </div>
     <p class="hint">Manual changes are saved with this post only; templates stay as they are. Arrow keys nudge the selected item. Square for feed, 4:5 for Instagram, 9:16 for WhatsApp Status and Stories.</p>
@@ -673,7 +673,7 @@ function exampleState(){
   return {
     libId:null, format:'square', template:'showcase', theme:'parco', colors:{...THEMES.parco},
     show:{eyebrow:true,sub:true,specs:true,badges:true,compat:true,bullets:true,cta:true,since:true,sidetag:true,tagline:true,contact:true,bg:true,caps:true},
-    wm:{mode:'photo',opacity:0.16,size:1}, wa:{pos:'off',size:1,label:'Enquire on WhatsApp',style:'theme'}, offsets:{}, decos:{}, extra:{}, texts:{}, footStyle:'auto', brandLogo:'none', textScale:1, look:'auto',
+    layoutV:2, wm:{mode:'photo',opacity:0.16,size:1}, wa:{pos:'off',size:1,label:'Enquire on WhatsApp',style:'theme'}, offsets:{}, decos:{}, extra:{}, texts:{}, footStyle:'auto', brandLogo:'none', textScale:1, look:'auto',
     sizes:{head:1,text:1,foot:1,logo:1,brand:1,photo:1}, fonts:{head:'Barlow Condensed',body:'Barlow'},
     product:'CGP water pump for transit mixers',
     writeup:'CGP brand water pump, part no. 1234344, for Greaves CIFA and Conmat transit mixers. Ready stock in Ahmedabad with supply across India. We also supply transit mixer spares for Schwing Stetter, Putzmeister, Venus and KYB.',
@@ -750,18 +750,31 @@ let ELSEEN=new Set();
    Transform order: move by dx,dy, then rotate and size around the box centre, so the template layout is untouched when nothing is set.
    opt.fit: fn(b) receives the stretched box and draws its own frame inside it, so photos keep their proportions while frames change shape.
    Without fit, sx/sy stretch the drawing itself (template shapes). opt.rot: extra rotation the item stores itself (added decorations use d.rot). */
-const SHAPE_RE=/^(photo|deco_|add_)/;
-function canShape(id){ return SHAPE_RE.test(String(id||'')); }
+/* Every item can rotate; these can also be stretched with the side handles (text boxes: width only; cards: only larger). */
+const STRETCH_RE=/^(photo|deco_|add_|tb_|card)/;
+function canStretch(id){ return STRETCH_RE.test(String(id||'')); }
+/* Crop: o.crop={l,t,r,b} insets (fractions of the frame). The frame is drawn in the inset box while photos are placed as if uncropped (PH_MAP). */
+let PH_MAP=null, EL_STACK=[], MIG=null;
+function relBox(R,from,to){ return {x:R.x+to.x-from.x,y:R.y+to.y-from.y,w:R.w+to.w-from.w,h:R.h+to.h-from.h}; }
+function phPlace(r){ return PH_MAP?relBox(r,PH_MAP.from,PH_MAP.to):r; }
+/* nested items (a tag inside a photo) move in their parent's space: canvas deltas go through the inverse of the parent's matrix */
+function linInv(m){ const det=(m.a*m.d-m.b*m.c)||1; return {a:m.d/det,b:-m.b/det,c:-m.c/det,d:m.a/det}; }
+function toLocal(inv,v){ return inv?{x:inv.a*v.x+inv.c*v.y,y:inv.b*v.x+inv.d*v.y}:v; }
 function mapQuad(ctx,b){ const m=ctx.getTransform(); return [[b.x,b.y],[b.x+b.w,b.y],[b.x+b.w,b.y+b.h],[b.x,b.y+b.h]].map(([x,y])=>[m.a*x+m.c*y+m.e,m.b*x+m.d*y+m.f]); }
 function el(id,box,fn,opt){ const ctx=CUR_CTX; if(!ctx) return fn(box); ELSEEN.add(String(id).split('_')[0]); if(ELC[id]!==undefined){ ELC[id]++; id=id+'_'+ELC[id]; } else ELC[id]=0;
   opt=opt||{}; const o=offFor(id)||{}; const dx=o.dx||0, dy=o.dy||0, sc=o.s||1, sx=o.sx||1, sy=o.sy||1, rot=(o.rot||0)+(opt.rot||0); let b=box;
+  const inv=collecting?linInv(ctx.getTransform()):null, pM=PH_MAP;
   ctx.save(); ctx.translate(dx,dy);
   if(box){ const cx=box.x+box.w/2, cy=box.y+box.h/2, kx=opt.fit?1:sx, ky=opt.fit?1:sy;
     if(rot||sc!==1||kx!==1||ky!==1){ ctx.translate(cx,cy); if(rot) ctx.rotate(rot*Math.PI/180); ctx.scale(sc*kx,sc*ky); ctx.translate(-cx,-cy); }
-    if(opt.fit&&(sx!==1||sy!==1)){ const w=box.w*sx, h=box.h*sy; b={x:cx-w/2,y:cy-h/2,w,h}; } }
-  if(o.hide) ctx.globalAlpha=0; else if(collecting&&b) hitRects.push({kind:'el',id,r:mapRect(ctx,b),q:mapQuad(ctx,b)});
+    if(opt.fit&&(sx!==1||sy!==1)){ const w=box.w*sx, h=box.h*sy; b={x:cx-w/2,y:cy-h/2,w,h}; }
+    if(opt.fit){ const c=o.crop; PH_MAP=null; if(c&&(c.l||c.t||c.r||c.b)){ const full=b; b={x:full.x+full.w*(c.l||0),y:full.y+full.h*(c.t||0),w:full.w*(1-(c.l||0)-(c.r||0)),h:full.h*(1-(c.t||0)-(c.b||0))}; PH_MAP={from:b,to:full}; } } }
+  if(o.hide) ctx.globalAlpha=0;
+  if(collecting&&b&&ctx.globalAlpha>0) hitRects.push({kind:'el',id,r:mapRect(ctx,b),q:mapQuad(ctx,b),inv});
   const pH=HEAD,pB=BODY,pS=SCRIPT; if(o.font){ const f=`'${o.font}','Noto Sans Gujarati','Noto Sans Devanagari',sans-serif`; HEAD=f; BODY=f; SCRIPT=f; }
-  try{ return fn(b); } finally{ HEAD=pH; BODY=pB; SCRIPT=pS; ctx.restore(); } }
+  if(MIG&&box) MIG[id]={parent:EL_STACK[EL_STACK.length-1]||null,cx:box.x+box.w/2,cy:box.y+box.h/2};
+  EL_STACK.push(id);
+  try{ return fn(b); } finally{ EL_STACK.pop(); HEAD=pH; BODY=pB; SCRIPT=pS; PH_MAP=pM; ctx.restore(); } }
 function deco(id,box,fn,opt){ return el('deco_'+id,box,fn,opt); }
 
 function drawLogo(ctx,img,x,y,h,align,chip){
@@ -839,9 +852,9 @@ function watermark(ctx,x,y,w,h){
 
 function drawPhoto(ctx,idx,r,opt={}){
   const ph=S.photos[idx]; if(!ph){ placeholder(ctx,r,opt.dark,'ADD PHOTO '+(idx+1)); return; }
-  const img=ph.img; const base=Math.min(r.w/img.width,r.h/img.height)*(opt.fill||1)*SZ.photo;
+  const img=ph.img, R=phPlace(r); const base=Math.min(R.w/img.width,R.h/img.height)*(opt.fill||1)*SZ.photo;
   const sc=base*ph.zoom, w=img.width*sc, h=img.height*sc;
-  const x=r.x+(r.w-w)/2+ph.ox*r.w, y=r.y+(r.h-h)/2+ph.oy*r.h;
+  const x=R.x+(R.w-w)/2+ph.ox*R.w, y=R.y+(R.h-h)/2+ph.oy*R.h;
   ctx.save();
   if(opt.shape==='circle'){ ctx.beginPath(); ctx.ellipse(r.x+r.w/2,r.y+r.h/2,r.w/2,r.h/2,0,0,Math.PI*2); ctx.clip(); }
   else if(opt.shape==='round'){ rr(ctx,r.x,r.y,r.w,r.h,opt.radius||20); ctx.clip(); }
@@ -1073,7 +1086,7 @@ function paintLook_(ctx,W,H,c,classic){
   } else classic();
 }
 function parcoLogo(ctx,x,y,h,align,chip){ const lg=LOGO.parco; if(!lg) return 0; const hh=h*SZ.logo, w=hh*lg.width/lg.height, X=align==='right'?x-w:align==='center'?x-w/2:x, p=hh*0.2; return el('logo',{x:X-p,y:y-p,w:w+2*p,h:hh+2*p},()=>drawLogo(ctx,lg,x,y,hh,align,chip||LOOK!=='classic')); }
-function photoBounds(idx,r,fill){ const ph=S.photos[idx]; if(!ph) return r; const img=ph.img; const base=Math.min(r.w/img.width,r.h/img.height)*(fill||1)*SZ.photo; const sc=base*ph.zoom, w=img.width*sc, h=img.height*sc; const x=r.x+(r.w-w)/2+ph.ox*r.w, y=r.y+(r.h-h)/2+ph.oy*r.h; const X=Math.max(x,r.x),Y=Math.max(y,r.y); return {x:X,y:Y,w:Math.min(x+w,r.x+r.w)-X,h:Math.min(y+h,r.y+r.h)-Y}; }
+function photoBounds(idx,r,fill){ const ph=S.photos[idx]; if(!ph) return r; const img=ph.img, R=phPlace(r); const base=Math.min(R.w/img.width,R.h/img.height)*(fill||1)*SZ.photo; const sc=base*ph.zoom, w=img.width*sc, h=img.height*sc; const x=R.x+(R.w-w)/2+ph.ox*R.w, y=R.y+(R.h-h)/2+ph.oy*R.h; const X=Math.max(x,r.x),Y=Math.max(y,r.y); return {x:X,y:Y,w:Math.min(x+w,r.x+r.w)-X,h:Math.min(y+h,r.y+r.h)-Y}; }
 function plate(ctx,idx,r,fill){
   if(LOOK==='classic') return false; const b=photoBounds(idx,r,fill); const p=16;
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.32)'; ctx.shadowBlur=26; ctx.shadowOffsetY=10; ctx.fillStyle='#ffffff'; rr(ctx,b.x-p,b.y-p,b.w+2*p,b.h+2*p,24); ctx.fill(); ctx.restore();
@@ -1121,15 +1134,15 @@ function hdrA(ctx,W,hdrH,c){
 }
 function hdrB(ctx,W,c,o){
   const pad=60, hb=o.h, T=S.text, H_=hc(c);
-  const g=ctx.createLinearGradient(0,0,W*0.5,hb); g.addColorStop(0,H_.corner); g.addColorStop(1,'rgba(255,255,255,0)'); ctx.fillStyle=g; poly(ctx,[[0,0],[W*0.52,0],[W*0.46,hb-20],[0,hb-20]]); ctx.fill();
-  ctx.strokeStyle=H_.cornerLine; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(W*0.53,0); ctx.lineTo(W*0.47,hb-20); ctx.stroke();
+  deco('corner',{x:0,y:0,w:W*0.53+2,h:hb-20},()=>{ const g=ctx.createLinearGradient(0,0,W*0.5,hb); g.addColorStop(0,H_.corner); g.addColorStop(1,'rgba(255,255,255,0)'); ctx.fillStyle=g; poly(ctx,[[0,0],[W*0.52,0],[W*0.46,hb-20],[0,hb-20]]); ctx.fill();
+    ctx.strokeStyle=H_.cornerLine; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(W*0.53,0); ctx.lineTo(W*0.47,hb-20); ctx.stroke(); });
   parcoLogo(ctx,pad+(H_.chip?12:0),o.logoY+(H_.chip?6:0),H_.chip?o.logoH*0.86:o.logoH,'left');
   if(S.show.since&&T.since){ const y0=LOOK==='site'?44:38; const sz=fitLine(ctx,T.since,700,HEAD,40*SZ.text,20,W*0.35,0.5); const tw=ctx.measureText(T.since).width; el('since',{x:W-pad-tw,y:y0,w:tw,h:sz+12},()=>{ fitLine(ctx,T.since,700,HEAD,40*SZ.text,20,W*0.35,0.5); ctx.fillStyle=H_.text; txt(ctx,T.since,W-pad,y0,'right'); ctx.fillStyle=H_.sinceRule; ctx.fillRect(W-pad-tw,y0+sz+6,tw,4); }); }
   if(!o.noBrand) drawBrand(ctx,W-pad,S.show.since&&T.since?116:48,58);
 }
 function hdrC(ctx,W,c){
   const pad=56, T=S.text, H_=hc(c);
-  if(LOOK!=='site'){ ctx.fillStyle=c.pop; ctx.fillRect(0,0,W,10); }
+  if(LOOK!=='site') deco('topbar',{x:0,y:0,w:W,h:10},()=>{ ctx.fillStyle=c.pop; ctx.fillRect(0,0,W,10); });
   parcoLogo(ctx,pad+16,54,86,'left',true);
   if(S.show.since&&T.since){ const sz=fitLine(ctx,T.since,700,HEAD,38*SZ.text,20,W*0.35,0.5); const tw=ctx.measureText(T.since).width; el('since',{x:W-pad-tw,y:52,w:tw,h:sz+12},()=>{ fitLine(ctx,T.since,700,HEAD,38*SZ.text,20,W*0.35,0.5); ctx.fillStyle=LOOK==='classic'?c.ink:H_.text; txt(ctx,T.since,W-pad,52,'right'); ctx.fillStyle=LOOK==='night'?c.accent:c.pop; ctx.fillRect(W-pad-tw,52+sz+6,tw,4); }); }
   drawBrand(ctx,W-pad,S.show.since&&T.since?112:54,56);
@@ -1343,7 +1356,7 @@ function featuresBlock(ctx,x,w,sk,c,items,style,heading){
       else { ctx.fillStyle=c.pop; ctx.beginPath(); ctx.arc(x+size*0.28,yy+size*0.6,size*0.17,0,Math.PI*2); ctx.fill(); }
       setFont(ctx,600,size,BODY,0); ctx.fillStyle=inkFor(c); lines.forEach((l,j)=>txt(ctx,l,x+ind,yy+j*lh,'left')); yy+=lines.length*lh+gap; }); },'features',x,w);
 }
-function productAt(ctx,i,r,fill,blendOK){ el('photo'+i,r,b=>productAt_(ctx,i,b,fill,blendOK),{fit:true}); }
+function productAt(ctx,i,r,fill,blendOK,after){ el('photo'+i,r,b=>{ productAt_(ctx,i,b,fill,blendOK); if(after) after(b); },{fit:true}); }
 function productAt_(ctx,i,r,fill,blendOK){
   const ph=S.photos[i];
   if(ph&&!ph.transparent&&!(blendOK&&LOOK==='classic')){ const b=photoBounds(i,r,fill), p=14; ctx.save(); ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=24; ctx.shadowOffsetY=10; ctx.fillStyle='#ffffff'; rr(ctx,b.x-p,b.y-p,b.w+2*p,b.h+2*p,20); ctx.fill(); ctx.restore(); if(LOOK==='site'){ ctx.lineWidth=5; ctx.strokeStyle='#111111'; rr(ctx,b.x-p,b.y-p,b.w+2*p,b.h+2*p,20); ctx.stroke(); } }
@@ -1488,14 +1501,14 @@ const REF={
       refBg(ctx,W,H,c,'mint');
       parcoLogo(ctx,W-pad,y0,logoH,'right',LOOK!=='classic');
       const lh=stackH(L,12); stackDraw(L,yT,12);
-      if(C.length){ const ch=stackH(C,16)+48, cy=tall?yT+lh+24:yT; const card={x:cardX,y:cy,w:cardW,h:ch}; el('card',card,()=>{
-        ctx.save(); ctx.shadowColor='rgba(0,0,0,.14)'; ctx.shadowBlur=22; ctx.shadowOffsetY=6; ctx.fillStyle=looksDark()?'rgba(255,255,255,.08)':'#ffffff'; rr(ctx,card.x,card.y,card.w,card.h,26); ctx.fill(); ctx.restore();
-        if(LOOK==='site'){ ctx.lineWidth=4; ctx.strokeStyle='#111111'; rr(ctx,card.x,card.y,card.w,card.h,26); ctx.stroke(); }
-        stackDraw(C,cy+24,16); }); }
+      if(C.length){ const ch=stackH(C,16)+48, cy=tall?yT+lh+24:yT; const card={x:cardX,y:cy,w:cardW,h:ch}; el('card',card,b=>{
+        ctx.save(); ctx.shadowColor='rgba(0,0,0,.14)'; ctx.shadowBlur=22; ctx.shadowOffsetY=6; ctx.fillStyle=looksDark()?'rgba(255,255,255,.08)':'#ffffff'; rr(ctx,b.x,b.y,b.w,b.h,26); ctx.fill(); ctx.restore();
+        if(LOOK==='site'){ ctx.lineWidth=4; ctx.strokeStyle='#111111'; rr(ctx,b.x,b.y,b.w,b.h,26); ctx.stroke(); }
+        ctx.save(); ctx.translate(b.x-card.x,b.y-card.y); stackDraw(C,cy+24,16); ctx.restore(); },{fit:true}); }
       const g=24, rw=W-2*pad, two=S.photos.length>=2||true; const aw=tall?(rw-g)/2:rw*0.56, bw=rw-aw-g;
       const A={x:pad,y:rTop,w:aw,h:cb-rTop}, B={x:pad+aw+g,y:rTop+(tall?0:(cb-rTop)*0.1),w:bw,h:(cb-rTop)*(tall?1:0.9)};
-      productAt(ctx,0,A,0.98,true); productAt(ctx,1,B,0.98,true);
-      [A,B].forEach((r,i)=>{ const lb=tileLabel(i).toUpperCase(); if(lb){ const ts=24*sk; const tl=fitTag(ctx,lb,ts,r.w-40); drawTag(ctx,r.x-6,r.y+r.h-ts*1.55-4,tl,ts,LOOK==='site'?'#111111':c.pop,LOOK==='site'?c.accent:'#ffffff'); } });
+      const tag=(r,i)=>{ const lb=tileLabel(i).toUpperCase(); if(lb){ const ts=24*sk; const tl=fitTag(ctx,lb,ts,r.w-40); drawTag(ctx,r.x-6,r.y+r.h-ts*1.55-4,tl,ts,LOOK==='site'?'#111111':c.pop,LOOK==='site'?c.accent:'#ffffff'); } };
+      productAt(ctx,0,A,0.98,true,b=>tag(b,0)); productAt(ctx,1,B,0.98,true,b=>tag(b,1));
       if(hasE) cornerRibbon(ctx,T.eyebrow,LOOK==='site'?'#111111':c.pop,LOOK==='site'?c.accent:'#ffffff');
       stdFooter(ctx,W,H,c,'light');
       if(S.wm.mode==='post') watermark(ctx,0,0,W,H);
@@ -1533,9 +1546,9 @@ const REF={
       for(let i=0;i<n;i++){ const r=slots[i]; const ph=S.photos[i];
         if(ph){ const b=photoBounds(i,r,1); const dy=r.y+r.h-(b.y+b.h); ph._dy=dy; }
         const rr2={x:r.x,y:r.y+(ph&&ph._dy>0?ph._dy:0),w:r.w,h:r.h};
-        productAt(ctx,i,rr2,1,true);
+        productAt(ctx,i,rr2,1,true,(lbT=>lbT?b=>{ const R=relBox(r,rr2,b), ts=24*sk; drawTag(ctx,R.x,R.y+R.h-ts*1.6,fitTag(ctx,lbT,ts,R.w-40),ts,LOOK==='site'?'#111111':c.pop,LOOK==='site'?c.accent:'#ffffff'); }:null)(tall&&i===0?tileLabel(0).toUpperCase():''));
         const lb=tileLabel(i).toUpperCase(); if(lb&&!(tall&&i===0)){ const ts=21*sk; setFont(ctx,800,ts,HEAD,1); const t=clampLines(ctx,[lb],1,r.w)[0]; ctx.fillStyle=LOOK==='night'?'#ffffff':'#111111'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t,r.x+r.w/2,slabY+slabDepth+slabFront/2+1); }
-        else if(lb&&tall&&i===0){ const ts=24*sk; drawTag(ctx,r.x,r.y+r.h-ts*1.6,fitTag(ctx,lb,ts,r.w-40),ts,LOOK==='site'?'#111111':c.pop,LOOK==='site'?c.accent:'#ffffff'); } }
+        }
       stdFooter(ctx,W,H,c,'dark');
       if(S.wm.mode==='post') watermark(ctx,0,0,W,H);
     }};
@@ -1553,8 +1566,8 @@ function proHeader(ctx,W,c,side){
       setFont(ctx,800,54*SZ.text,HEAD,1); ctx.fillStyle=LOOK==='classic'?c.pop:H_.since; ctx.fillText(p.year,x,y0+(p.label?26:8)); }); }
   return y0+lh+18;
 }
-function cblock(ctx,id,r,rad,c,kind){
-  deco(id,r,r=>{ const site=LOOK==='site', night=LOOK==='night';
+function cblock(ctx,id,r,rad,c,kind){ deco(id,r,r=>cblockDraw(ctx,r,rad,c,kind),{fit:true}); }
+function cblockDraw(ctx,r,rad,c,kind){ { const site=LOOK==='site', night=LOOK==='night';
     const g=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);
     if(kind==='pop'){ g.addColorStop(0,c.accent); g.addColorStop(1,c.pop); }
     else if(site){ g.addColorStop(0,'#111111'); g.addColorStop(1,'#333333'); }
@@ -1562,7 +1575,7 @@ function cblock(ctx,id,r,rad,c,kind){
     else { g.addColorStop(0,shade(c.blue,-0.12)); g.addColorStop(1,shade(c.ink,0.02)); }
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.18)'; ctx.shadowBlur=26; ctx.shadowOffsetY=10; ctx.fillStyle=g; rr(ctx,r.x,r.y,r.w,r.h,rad); ctx.fill(); ctx.restore();
     ctx.save(); rr(ctx,r.x,r.y,r.w,r.h,rad); ctx.clip(); ctx.globalAlpha=.08; ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; for(let i=-r.h;i<r.w;i+=28){ ctx.beginPath(); ctx.moveTo(r.x+i,r.y); ctx.lineTo(r.x+i+r.h*0.6,r.y+r.h); ctx.stroke(); } ctx.restore();
-    ctx.fillStyle=kind==='pop'?c.ink:c.pop; ctx.fillRect(r.x+r.w*0.08,r.y-7,Math.min(110,r.w*0.3),9); },{fit:true});
+    ctx.fillStyle=kind==='pop'?c.ink:c.pop; ctx.fillRect(r.x+r.w*0.08,r.y-7,Math.min(110,r.w*0.3),9); }
 }
 function swoosh(ctx,id,x,y,w,h,c,flip){
   deco(id,{x,y:y-h*0.15,w,h:h*1.15},()=>{ ctx.save(); if(flip){ ctx.translate(2*x+w,0); ctx.scale(-1,1); }
@@ -1593,7 +1606,7 @@ function tileCard(ctx,i,r,c,o){ o=o||{}; el('photo'+i,r,r=>{ const p=o.pad??12, 
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.25)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6; ctx.fillStyle='#ffffff'; rr(ctx,r.x,r.y,r.w,r.h,rad); ctx.fill(); ctx.restore();
   if(o.frame){ ctx.lineWidth=o.frameW||6; ctx.strokeStyle=o.frame; rr(ctx,r.x+ctx.lineWidth/2,r.y+ctx.lineWidth/2,r.w-ctx.lineWidth,r.h-ctx.lineWidth,rad); ctx.stroke(); }
   if(LOOK==='site'){ ctx.lineWidth=4; ctx.strokeStyle='#111111'; rr(ctx,r.x,r.y,r.w,r.h,rad); ctx.stroke(); }
-  const pr={x:r.x+p,y:r.y+p,w:r.w-2*p,h:r.h-2*p}; if(S.photos[i]) drawPhoto(ctx,i,pr,{fill:0.96,blend:true}); else placeholder(ctx,pr,false,'ADD PHOTO '+(i+1)); },{fit:true}); }
+  const pr={x:r.x+p,y:r.y+p,w:r.w-2*p,h:r.h-2*p}; if(S.photos[i]) drawPhoto(ctx,i,pr,{fill:0.96,blend:true}); else placeholder(ctx,pr,false,'ADD PHOTO '+(i+1)); if(o.after) o.after(r); },{fit:true}); }
 function artFrame(ctx,W,H,c,bgKind,logoSide,foot,drawBody){
   refBg(ctx,W,H,c,bgKind); proHeader(ctx,W,c,logoSide); drawBody(); stdFooter(ctx,W,H,c,foot); if(S.wm.mode==='post') watermark(ctx,0,0,W,H);
 }
@@ -1607,15 +1620,15 @@ const ART={
       const By=hb+stackH(fit.bl,14)+24, B={x:pad-6,y:By,w:colW+12,h:cb-By};
       L={ok:fit.ok,draw(){ cblock(ctx,'blockA',{x:A.x+40,y:A.y+44,w:W-A.x,h:A.h-44},40,c,'ink'); dotsGrid(ctx,'dots',A.x+4,A.y+A.h-90,c.pop);
         swoosh(ctx,'swoosh',-30,B.y+B.h*0.42,W*0.6,B.h*0.62,c);
-        productAt(ctx,0,{x:A.x,y:A.y,w:A.w-18,h:A.h-28},0.98,false); productAt(ctx,1,B,0.95,true);
-        photoLabel(ctx,0,A,c,'tl'); photoLabel(ctx,1,B,c,'bl'); stackDraw(fit.bl,hb,14); }};
+        const A0={x:A.x,y:A.y,w:A.w-18,h:A.h-28}; productAt(ctx,0,A0,0.98,false,b=>photoLabel(ctx,0,relBox(A,A0,b),c,'tl')); productAt(ctx,1,B,0.95,true,b=>photoLabel(ctx,1,b,c,'bl'));
+        stackDraw(fit.bl,hb,14); }};
     } else {
       const fit=fitK(k=>proText(ctx,pad,W-2*pad,'left',k*s,c,{head:120,headMax:2,pnSize:68}),H*0.27);
       const y1=hb+stackH(fit.bl,14)+26, avail=cb-y1, hA=Math.round(avail*0.56), hB=avail-hA-26;
       const A={x:pad,y:y1,w:W-2*pad,h:hA}, B={x:pad,y:y1+hA+26,w:W*0.52-pad,h:hB};
       const fb=featuresBlock(ctx,W*0.56,W*0.44-pad,s*SZ.text,c,featureItems(4),'dot','KEY FEATURES');
       L={ok:fit.ok&&hA>=H*0.26,draw(){ cblock(ctx,'blockA',{x:-40,y:A.y+A.h*0.18,w:W*0.8,h:A.h*0.82},40,c,'ink'); swoosh(ctx,'swoosh',W*0.25,B.y+B.h*0.35,W*0.8,B.h*0.6,c,true);
-        productAt(ctx,0,A,0.98,false); productAt(ctx,1,B,0.95,true); photoLabel(ctx,0,A,c,'tl'); photoLabel(ctx,1,B,c,'bl'); stackDraw(fit.bl,hb,14); if(fb) drawB(fb,B.y+8); }};
+        productAt(ctx,0,A,0.98,false,b=>photoLabel(ctx,0,b,c,'tl')); productAt(ctx,1,B,0.95,true,b=>photoLabel(ctx,1,b,c,'bl')); stackDraw(fit.bl,hb,14); if(fb) drawB(fb,B.y+8); }};
     }
     return {ok:L.ok,draw(){ artFrame(ctx,W,H,c,'blue','left','navy',L.draw); }};
   },
@@ -1627,13 +1640,12 @@ const ART={
     else { const ph=(cb-y1-g)/2; P1={x:pad,y:y1,w:W-2*pad,h:ph}; P2={x:pad,y:y1+ph+g,w:W-2*pad,h:ph}; }
     return {ok:fit.ok&&P1.h>=H*(tall?0.24:0.36),draw(){ artFrame(ctx,W,H,c,'blue','left','dark',()=>{
       swoosh(ctx,'swoosh',-20,y1-60,W+40,150,c);
-      deco('panelA',P1,b=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.22)'; ctx.shadowBlur=24; ctx.shadowOffsetY=8; ctx.fillStyle='#ffffff'; rr(ctx,b.x,b.y,b.w,b.h,30); ctx.fill(); ctx.restore(); if(LOOK==='site'){ ctx.lineWidth=5; ctx.strokeStyle='#111111'; rr(ctx,b.x,b.y,b.w,b.h,30); ctx.stroke(); } ctx.fillStyle=c.pop; ctx.fillRect(b.x+30,b.y-6,90,10); },{fit:true});
-      cblock(ctx,'panelB',P2,30,c,'ink');
-      productAt(ctx,0,{x:P1.x+18,y:P1.y+18,w:P1.w-36,h:P1.h-36},0.97,true);
-      productAt(ctx,1,{x:P2.x+26,y:P2.y+26,w:P2.w-52,h:P2.h-52},0.95,false);
+      el('photo0',P1,b=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.22)'; ctx.shadowBlur=24; ctx.shadowOffsetY=8; ctx.fillStyle='#ffffff'; rr(ctx,b.x,b.y,b.w,b.h,30); ctx.fill(); ctx.restore(); if(LOOK==='site'){ ctx.lineWidth=5; ctx.strokeStyle='#111111'; rr(ctx,b.x,b.y,b.w,b.h,30); ctx.stroke(); } ctx.fillStyle=c.pop; ctx.fillRect(b.x+30,b.y-6,90,10);
+        productAt_(ctx,0,{x:b.x+18,y:b.y+18,w:b.w-36,h:b.h-36},0.97,true); photoLabel(ctx,0,b,c,'bl'); },{fit:true});
+      el('photo1',P2,b=>{ cblockDraw(ctx,b,30,c,'ink'); productAt_(ctx,1,{x:b.x+26,y:b.y+26,w:b.w-52,h:b.h-52},0.95,false); photoLabel(ctx,1,b,c,'bl'); },{fit:true});
       const bx=tall?W/2:(P1.x+P1.w+P2.x)/2, by=tall?(P1.y+P1.h+P2.y)/2:P1.y+P1.h/2, br=44;
       deco('badge',{x:bx-br,y:by-br,w:2*br,h:2*br},()=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.3)'; ctx.shadowBlur=14; ctx.fillStyle=LOOK==='site'?'#111111':c.pop; ctx.beginPath(); ctx.arc(bx,by,br,0,Math.PI*2); ctx.fill(); ctx.restore(); ctx.lineWidth=4; ctx.strokeStyle='#ffffff'; ctx.beginPath(); ctx.arc(bx,by,br-7,0,Math.PI*2); ctx.stroke(); ctx.lineWidth=7; ctx.lineCap='round'; ctx.strokeStyle=LOOK==='site'?c.accent:'#ffffff'; ctx.beginPath(); ctx.moveTo(bx-16,by); ctx.lineTo(bx+16,by); ctx.moveTo(bx,by-16); ctx.lineTo(bx,by+16); ctx.stroke(); });
-      photoLabel(ctx,0,P1,c,'bl'); photoLabel(ctx,1,P2,c,'bl'); stackDraw(fit.bl,hb,14); }); }};
+      stackDraw(fit.bl,hb,14); }); }};
   },
   trioHero(ctx,W,H,s){
     const c=S.colors, tall=H/W>1.4, pad=44, cb=H-contactH()-14, hb=proHeaderH();
@@ -1646,9 +1658,8 @@ const ART={
     return {ok:fit.ok&&A.h>=H*0.28,draw(){ artFrame(ctx,W,H,c,'blue','left','navy',()=>{
       cblock(ctx,'blockA',{x:-40,y:A.y+32,w:A.w+36,h:A.h-32},40,c,'ink'); swoosh(ctx,'swoosh',B.x-60,C.y+C.h*0.4,W-B.x+80,C.h*0.7,c);
       dotsGrid(ctx,'dots',A.x+A.w-60,A.y+A.h-70,c.accent);
-      productAt(ctx,0,{x:A.x+6,y:A.y,w:A.w-20,h:A.h-24},0.98,false);
-      tileCard(ctx,1,B,c,{}); tileCard(ctx,2,C,c,{});
-      photoLabel(ctx,0,A,c,'tl'); photoLabel(ctx,1,B,c,'bl'); photoLabel(ctx,2,C,c,'bl');
+      const A0={x:A.x+6,y:A.y,w:A.w-20,h:A.h-24}; productAt(ctx,0,A0,0.98,false,b=>photoLabel(ctx,0,relBox(A,A0,b),c,'tl'));
+      tileCard(ctx,1,B,c,{after:b=>photoLabel(ctx,1,b,c,'bl')}); tileCard(ctx,2,C,c,{after:b=>photoLabel(ctx,2,b,c,'bl')});
       stackDraw(fit.bl,hb,14); if(fr) drawB(fr,hb+6); }); }};
   },
   trioMedal(ctx,W,H,s){
@@ -1661,7 +1672,7 @@ const ART={
     const medal=m=>{ const r={x:m.cx-m.d/2,y:m.cy-m.d/2,w:m.d,h:m.d}; el('photo'+m.i,r,b=>{ ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=30; ctx.shadowOffsetY=12; ctx.fillStyle='#ffffff'; ovalPath(ctx,b,0); ctx.fill(); ctx.restore();
       if(S.photos[m.i]) drawPhoto(ctx,m.i,b,{shape:'circle',fill:0.84}); else placeholder(ctx,{x:b.x+b.w*0.15,y:b.y+b.h*0.15,w:b.w*0.7,h:b.h*0.7},false,'PHOTO '+(m.i+1));
       const TC=tileCols(c); ctx.lineWidth=Math.max(7,m.d*0.025); ctx.strokeStyle=TC.ring; ovalPath(ctx,b,-ctx.lineWidth/2); ctx.stroke();
-      ctx.lineWidth=5; ctx.strokeStyle=c.pop; ovalPath(ctx,b,11,-Math.PI*0.25,Math.PI*0.2); ctx.stroke(); },{fit:true}); photoLabel(ctx,m.i,r,c,'bc'); };
+      ctx.lineWidth=5; ctx.strokeStyle=c.pop; ovalPath(ctx,b,11,-Math.PI*0.25,Math.PI*0.2); ctx.stroke(); photoLabel(ctx,m.i,b,c,'bc'); },{fit:true}); };
     return {ok:fit.ok,draw(){ artFrame(ctx,W,H,c,'blue','left','dark',()=>{
       glowAt(ctx,W/2,y1+RH*0.45,W*0.6,LOOK==='night'?alpha(c.blue,.5):alpha(c.blue,.18));
       deco('arc',{x:0,y:y1,w:W,h:RH},()=>{ const g=ctx.createLinearGradient(0,0,W,0); g.addColorStop(0,c.accent); g.addColorStop(1,c.pop); ctx.strokeStyle=g; ctx.lineWidth=26; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(30,y1+RH*0.95); ctx.quadraticCurveTo(W/2,y1-RH*0.25,W-30,y1+RH*0.95); ctx.stroke(); });
@@ -1710,7 +1721,7 @@ const ART={
     else { const h1=R.h*0.38, h2=R.h*0.31, h3=R.h-h1-h2-2*g, hw=(R.w-g)/2; T4=[{x:R.x,y:R.y,w:R.w,h:h1},{x:R.x,y:R.y+h1+g,w:hw,h:h2},{x:R.x+hw+g,y:R.y+h1+g,w:hw,h:h2},{x:R.x,y:R.y+h1+h2+2*g,w:R.w,h:h3}]; }
     return {ok:fit.ok&&R.h>=H*(tall?0.48:0.42),draw(){ artFrame(ctx,W,H,c,'blue','right','dark',()=>{
       glowAt(ctx,W*0.3,R.y+R.h*0.4,W*0.55,LOOK==='night'?alpha(c.blue,.45):alpha(c.blue,.16)); swoosh(ctx,'swoosh',-40,R.y+R.h*0.62,W+80,R.h*0.42,c);
-      T4.forEach((t,i)=>{ tileCard(ctx,i,t,c,{frame:i===0?c.pop:null,frameW:7}); photoLabel(ctx,i,t,c,'bl'); }); stackDraw(fit.bl,hb,14); }); }};
+      T4.forEach((t,i)=>tileCard(ctx,i,t,c,{frame:i===0?c.pop:null,frameW:7,after:b=>photoLabel(ctx,i,b,c,'bl')})); stackDraw(fit.bl,hb,14); }); }};
   }
 };
 
@@ -1739,7 +1750,8 @@ function showcaseCore(ctx,W,H,s,inset){
       const g=ctx.createLinearGradient(0,0,0,bottom); g.addColorStop(0,'#ffffff'); g.addColorStop(1,c.paper); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
       if(!drawBg(ctx,{x:W*0.3,y:0,w:W*0.7,h:bottom},'left',c.paper,0.95)){
         ctx.save(); ctx.beginPath(); ctx.rect(0,hdrH,W,bottom-hdrH); ctx.clip(); hatch(ctx,W,H,alpha(c.ink,.035),24); ctx.restore();
-        const rg=ctx.createRadialGradient(P.x+P.w/2,P.y+P.h*0.5,10,P.x+P.w/2,P.y+P.h*0.5,P.w*0.6); rg.addColorStop(0,alpha(c.blue,.16)); rg.addColorStop(1,alpha(c.blue,0)); ctx.fillStyle=rg; ctx.fillRect(0,hdrH,W,bottom-hdrH);
+        const gx=P.x+P.w/2, gy=P.y+P.h*0.5, gr=P.w*0.6; ctx.save(); ctx.beginPath(); ctx.rect(0,hdrH,W,bottom-hdrH); ctx.clip();
+        deco('glow',{x:gx-gr,y:gy-gr,w:2*gr,h:2*gr},()=>{ const rg=ctx.createRadialGradient(gx,gy,10,gx,gy,gr); rg.addColorStop(0,alpha(c.blue,.16)); rg.addColorStop(1,alpha(c.blue,0)); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(gx,gy,gr,0,Math.PI*2); ctx.fill(); }); ctx.restore();
       }
     });
     if(inset){
@@ -1804,8 +1816,7 @@ const TPL={
           const g=ctx.createRadialGradient(scx,scy,D*0.1,scx,scy,D*0.55); g.addColorStop(0,dark?alpha(c.blue,.55):alpha(c.blue,.18)); g.addColorStop(1,dark?alpha(c.blue,0):alpha(c.blue,0)); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(scx,scy,D*0.55,0,Math.PI*2); ctx.fill();
           ctx.lineWidth=3; ctx.strokeStyle=dark?'rgba(255,255,255,.25)':LOOK==='site'?'#111111':alpha(c.blue,.45); ctx.setLineDash([6,10]); ctx.beginPath(); ctx.arc(scx,scy,D*0.47,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
           ctx.lineWidth=6; ctx.strokeStyle=c.pop; ctx.beginPath(); ctx.arc(scx,scy,D*0.47,Math.PI*0.75,Math.PI*1.05); ctx.stroke(); });
-        groundShadow(ctx,scx,stTop+stageH*0.93,cw*0.34,stageH*0.04);
-        photoOrHole(ctx,0,{x:cx0,y:stTop,w:cw,h:stageH},{fill:0.97,blend:true});
+        photoOrHole(ctx,0,{x:cx0,y:stTop,w:cw,h:stageH},{fill:0.97,blend:true,under:b=>groundShadow(ctx,b.x+b.w/2,b.y+b.h*0.93,b.w*0.34,b.h*0.04)});
       } else {
         const TC=tileCols(c);
         photoOrHole(ctx,0,{x:scx-D/2,y:scy-D/2,w:D,h:D},{shape:'circle',fill:0.88,onWhite:true,
@@ -1987,8 +1998,10 @@ function hitsAt(p){ const out=[]; for(let i=hitRects.length-1;i>=0;i--){ const h
 function hit(p){ return hitsAt(p)[0]||null; }
 let drag=null;
 function curMap(create){ state.offsets=state.offsets||{}; const t=state.offsets[state.template]||(create?(state.offsets[state.template]={}):null); if(!t) return null; return t[state.format]||(create?(t[state.format]={}):null); }
-function getOff(id){ const m=curMap(false); const o=(m&&m[id])||{}; return {dx:o.dx||0,dy:o.dy||0,s:o.s||1,sx:o.sx||1,sy:o.sy||1,rot:o.rot||0}; }
-function setStretch(id,k,v){ v=Math.round(Math.max(0.15,Math.min(6,v))*1000)/1000; const m=curMap(true); m[id]={...(m[id]||{}),[k]:v}; return v; }
+function getOff(id){ const m=curMap(false); const o=(m&&m[id])||{}; return {dx:o.dx||0,dy:o.dy||0,s:o.s||1,sx:o.sx||1,sy:o.sy||1,rot:o.rot||0,crop:o.crop||null}; }
+function setCrop(id,c){ const m=curMap(true), o={...(m[id]||{})}; const k={l:+(c.l||0).toFixed(4),t:+(c.t||0).toFixed(4),r:+(c.r||0).toFixed(4),b:+(c.b||0).toFixed(4)}; if(k.l||k.t||k.r||k.b) o.crop=k; else delete o.crop; m[id]=o; }
+let CROP_MODE=false;
+function setStretch(id,k,v){ v=Math.round(Math.max(String(id).startsWith('card')?1:0.15,Math.min(6,v))*1000)/1000; const m=curMap(true); m[id]={...(m[id]||{}),[k]:v}; return v; }
 function addDecoOf(id){ return String(id).startsWith('add_')?(decoList(false)||[]).find(d=>'add_'+d.id===id):null; }
 function getRot(id){ const d=addDecoOf(id); return d?(d.rot||0):getOff(id).rot; }
 function setRot(id,a){ const v=((Math.round(a)%360)+540)%360-180, d=addDecoOf(id);
@@ -2013,55 +2026,75 @@ function selFrame(h){ const r=h.r, q=h.q||[[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+
   const w=Math.hypot(q[1][0]-q[0][0],q[1][1]-q[0][1]), hh=Math.hypot(q[3][0]-q[0][0],q[3][1]-q[0][1]);
   const ux=w>0.01?{x:(q[1][0]-q[0][0])/w,y:(q[1][1]-q[0][1])/w}:{x:1,y:0}, uy=hh>0.01?{x:(q[3][0]-q[0][0])/hh,y:(q[3][1]-q[0][1])/hh}:{x:-ux.y,y:ux.x};
   return {c:{x:(q[0][0]+q[2][0])/2,y:(q[0][1]+q[2][1])/2},w,h:hh,ux,uy}; }
-function selHandles(h){ const f=selFrame(h), ex=f.w/2+6, ey=f.h/2+6, sh=canShape(h.id), ro=sh?Math.max(56,uiK()*34):0, L=[];
+function selHandles(h){ const f=selFrame(h), ex=f.w/2+6, ey=f.h/2+6, sid=String(h.id), sh=canStretch(sid), tb=sid.startsWith('tb_'), ro=Math.max(56,uiK()*34), L=[];
   const add=(kind,i,j,lx,ly)=>L.push({kind,i,j,lx,ly,x:f.c.x+f.ux.x*lx+f.uy.x*ly,y:f.c.y+f.ux.y*lx+f.uy.y*ly});
   [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([i,j])=>add('corner',i,j,i*ex,j*ey));
-  let ry=0; if(sh){ [[1,0],[-1,0],[0,1],[0,-1]].forEach(([i,j])=>add('side',i,j,i*ex,j*ey));
-    // rotate handle above the frame; below it, or just inside the top edge, when that spot is off the canvas
-    const on=ly=>{ const x=f.c.x+f.uy.x*ly, y=f.c.y+f.uy.y*ly; return x>=8&&y>=8&&x<=cv.width-8&&y<=cv.height-8; };
-    ry=[-ey-ro,ey+ro,-ey+ro].find(on)??-ey+ro; add('rot',0,-1,0,ry); }
+  if(sh) [[1,0],[-1,0],[0,1],[0,-1]].filter(([i])=>!tb||i).forEach(([i,j])=>add('side',i,j,i*ex,j*ey));
+  // rotate handle above the frame; below it, or just inside the top edge, when that spot is off the canvas
+  const on=ly=>{ const x=f.c.x+f.uy.x*ly, y=f.c.y+f.uy.y*ly; return x>=8&&y>=8&&x<=cv.width-8&&y<=cv.height-8; };
+  const ry=[-ey-ro,ey+ro,-ey+ro].find(on)??-ey+ro; add('rot',0,-1,0,ry);
   return {f,L,ex,ey,ro,ry}; }
-function drawSel(ctx,h){ const {f,L,ex,ey,ro,ry}=selHandles(h), blue='#1f74c9';
+function drawSel(ctx,h){ const {f,L,ex,ey,ro,ry}=selHandles(h), blue='#1f74c9', crop=CROP_MODE&&String(h.id).startsWith('photo')?'#f26522':blue;
   ctx.save(); ctx.setTransform(f.ux.x,f.ux.y,f.uy.x,f.uy.y,f.c.x,f.c.y);
   ctx.setLineDash([12,8]); ctx.lineWidth=4; ctx.strokeStyle=blue; ctx.strokeRect(-ex,-ey,2*ex,2*ey); ctx.setLineDash([]);
   if(ro){ ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,ry>ey?ey:-ey); ctx.lineTo(0,ry); ctx.stroke(); }
   L.forEach(k=>{ const x=k.lx, y=k.ly;
     if(k.kind==='corner'){ ctx.fillStyle='#ffffff'; ctx.fillRect(x-11,y-11,22,22); ctx.fillStyle=blue; ctx.fillRect(x-8,y-8,16,16); }
-    else if(k.kind==='side'){ const w=k.i?12:32, hh=k.i?32:12; ctx.fillStyle='#ffffff'; rr(ctx,x-w/2-3,y-hh/2-3,w+6,hh+6,9); ctx.fill(); ctx.fillStyle=blue; rr(ctx,x-w/2,y-hh/2,w,hh,6); ctx.fill(); }
+    else if(k.kind==='side'){ const w=k.i?12:32, hh=k.i?32:12; ctx.fillStyle='#ffffff'; rr(ctx,x-w/2-3,y-hh/2-3,w+6,hh+6,9); ctx.fill(); ctx.fillStyle=crop; rr(ctx,x-w/2,y-hh/2,w,hh,6); ctx.fill(); }
     else { ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(x,y,16,0,Math.PI*2); ctx.fill(); ctx.fillStyle=blue; ctx.beginPath(); ctx.arc(x,y,12,0,Math.PI*2); ctx.fill();
       ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x,y,6,-Math.PI*0.9,Math.PI*0.5); ctx.stroke(); } });
   ctx.restore(); }
 function handleAt(p){ const h=selRect(); if(!h) return null; const H=selHandles(h), tol=Math.max(26,uiK()*18); let best=null, bd=tol;
   H.L.forEach(k=>{ const d=Math.hypot(p.x-k.x,p.y-k.y); if(d<=bd){ bd=d; best=k; } }); return best?{...best,f:H.f}:null; }
 function handleCursor(hd){ if(hd.kind==='rot') return 'grab'; const a=Math.atan2(hd.y-hd.f.c.y,hd.x-hd.f.c.x)*180/Math.PI; return ['ew-resize','nwse-resize','ns-resize','nesw-resize'][Math.round(((a%180)+180)%180/45)%4]; }
-function updSel(){ const tb=selTB(); $('tbCtl').hidden=!tb; if(tb) fillTB(tb); const has=!!SEL, sid=String(SEL||''), isPh=sid.startsWith('photo'), isAdd=sid.startsWith('add_')||!!tb, isDeco=sid.startsWith('deco_')||isAdd; const dd=isAdd?selDeco():null; $('decoCtl').hidden=!dd; if(dd){ $('dcK').value=dd.k||1; $('dcKo').textContent=Math.round((dd.k||1)*100)+'%'; $('dcN').value=dd.n||1; $('dcNo').textContent=Math.round((dd.n||1)*100)+'%'; $('dcNWrap').hidden=!(DECOS[dd.type]||{}).d; $('dcColor').value=dd.color; $('dcOp').value=dd.op??1; $('dcOpo').textContent=Math.round((dd.op??1)*100)+'%'; $('dcRot').value=dd.rot||0; $('dcRoto').textContent=(dd.rot||0)+'°'; $('dcLayer').textContent=dd.back?'Bring to front':'Send behind'; } $('selHide').hidden=!has||isAdd; if(isAdd){ setTimeout(()=>{ $('selHide').hidden=true; }); } $('selReset').hidden=!has; $('selSizeWrap').hidden=!has; $('selHide').hidden=!has; $('selFontWrap').hidden=!has||isPh||isDeco; const t=$('moveTxt');
-  if(has){ t.innerHTML='Selected: <b></b> · drag to move, drag a corner to resize'+(canShape(SEL)?', a side handle to stretch, the round handle to rotate (Shift: 15° steps). Alt+click picks the item underneath.':''); t.querySelector('b').textContent=elName(SEL); const o=getOff(SEL); $('selSize').value=o.s; $('selSizeo').textContent=Math.round(o.s*100)+'%'; const m=curMap(false); $('selFont').value=(m&&m[SEL]&&m[SEL].font)||''; }
+function updSel(){ const tb=selTB(); $('tbCtl').hidden=!tb; if(tb) fillTB(tb); const has=!!SEL, sid=String(SEL||''), isPh=sid.startsWith('photo'), isAdd=sid.startsWith('add_')||!!tb, isDeco=sid.startsWith('deco_')||isAdd; const dd=isAdd?selDeco():null; $('decoCtl').hidden=!dd; if(dd){ $('dcK').value=dd.k||1; $('dcKo').textContent=Math.round((dd.k||1)*100)+'%'; $('dcN').value=dd.n||1; $('dcNo').textContent=Math.round((dd.n||1)*100)+'%'; $('dcNWrap').hidden=!(DECOS[dd.type]||{}).d; $('dcColor').value=dd.color; $('dcOp').value=dd.op??1; $('dcOpo').textContent=Math.round((dd.op??1)*100)+'%'; $('dcRot').value=dd.rot||0; $('dcRoto').textContent=(dd.rot||0)+'°'; $('dcLayer').textContent=dd.back?'Bring to front':'Send behind'; } $('selHide').hidden=!has||isAdd; if(isAdd){ setTimeout(()=>{ $('selHide').hidden=true; }); } $('selReset').hidden=!has; $('selSizeWrap').hidden=!has; $('selHide').hidden=!has; $('selFontWrap').hidden=!has||isPh||isDeco; $('selCrop').hidden=!isPh; $('selCrop').setAttribute('aria-pressed',String(CROP_MODE)); $('selCrop').textContent=CROP_MODE?'✂ Cropping (tap to finish)':'✂ Crop photo'; $('selUncrop').hidden=!(isPh&&getOff(SEL).crop); const t=$('moveTxt');
+  if(has){ t.innerHTML='Selected: <b></b> · drag to move, a corner to resize, '+(isPh&&CROP_MODE?'a side handle to crop, ':canStretch(SEL)?(sid.startsWith('tb_')?'a side handle to change the width, ':'a side handle to stretch, '):'')+'the round handle to rotate (Shift: 15° steps). Tap it again to pick the item underneath (Alt+click on a computer).'; t.querySelector('b').textContent=elName(SEL); const o=getOff(SEL); $('selSize').value=o.s; $('selSizeo').textContent=Math.round(o.s*100)+'%'; const m=curMap(false); $('selFont').value=(m&&m[SEL]&&m[SEL].font)||''; }
   else t.textContent='Tap any item on the post (text, photo, logo or shape) to move, resize, restyle or hide it.';
   const m=curMap(false), hid=m?Object.keys(m).filter(k=>m[k]&&m[k].hide):[]; $('hiddenRow').hidden=!hid.length; $('hiddenList').innerHTML=hid.map(k=>`<button type="button" data-unhide="${esc(k)}">${esc(elName(k))} ✕</button>`).join(''); }
+let TAPC=null; // last tap that changed the selection: {p,id}
+function selectItem(id){ if(id!==SEL) CROP_MODE=false; SEL=id; if(String(id).startsWith('photo')){ const ix=parseInt(String(id).slice(5)); if(state.photos[ix]){ state.active=ix; syncPhotoUI(); renderPhotoList(); } } }
 cv.addEventListener('pointerdown',e=>{ const p=canvasPoint(e); const hd=handleAt(p);
-  if(hd){ pushUndo(); const f=hd.f, o=getOff(SEL);
+  if(hd){ pushUndo(); const f=hd.f, o=getOff(SEL), sid=String(SEL), inv=(selRect()||{}).inv;
     if(hd.kind==='corner') drag={kind:'scale',id:SEL,c:f.c,d0:Math.max(8,Math.hypot(p.x-f.c.x,p.y-f.c.y)),s0:o.s};
-    else if(hd.kind==='side'){ // stretch along one axis; the opposite side stays where it is
+    else if(hd.kind==='side'){ // u points out through the dragged side
       const u=hd.i?{x:f.ux.x*hd.i,y:f.ux.y*hd.i}:{x:f.uy.x*hd.j,y:f.uy.y*hd.j}, L0=Math.max(1,hd.i?f.w:f.h);
-      const A={x:f.c.x-u.x*L0/2,y:f.c.y-u.y*L0/2}; drag={kind:'side',id:SEL,k:hd.i?'sx':'sy',k0:hd.i?o.sx:o.sy,u,L0,A,t0:(p.x-A.x)*u.x+(p.y-A.y)*u.y,c:f.c,dx:o.dx,dy:o.dy}; }
+      if(CROP_MODE&&sid.startsWith('photo')){ // crop: move one edge in, nothing else moves
+        const cr={l:0,t:0,r:0,b:0,...(o.crop||{})}, k=hd.i?(hd.i>0?'r':'l'):(hd.j>0?'b':'t');
+        drag={kind:'crop',id:SEL,k,cr,u,p0:p,full:L0/Math.max(0.05,1-(hd.i?cr.l+cr.r:cr.t+cr.b))}; }
+      else if(sid.startsWith('tb_')){ const b=selTB(), pin={x:f.c.x-f.ux.x*hd.i*f.w/2-f.uy.x*f.h/2,y:f.c.y-f.ux.y*hd.i*f.w/2-f.uy.y*f.h/2};
+        drag={kind:'tbw',id:SEL,b,i:-hd.i,u,p0:p,L0,s:o.s,pin,inv}; }
+      else { // stretch along one axis; the opposite side stays where it is
+        const A={x:f.c.x-u.x*L0/2,y:f.c.y-u.y*L0/2}; drag={kind:'side',id:SEL,k:hd.i?'sx':'sy',k0:hd.i?o.sx:o.sy,u,L0,A,t0:(p.x-A.x)*u.x+(p.y-A.y)*u.y,c:f.c,dx:o.dx,dy:o.dy,inv}; } }
     else drag={kind:'rot',id:SEL,c:f.c,a0:Math.atan2(p.y-f.c.y,p.x-f.c.x),r0:getRot(SEL)}; }
-  else { let h=hit(p);
-    if(h&&e.altKey&&SEL){ const all=hitsAt(p), i=all.findIndex(x=>x.kind==='el'&&x.id===SEL); if(i>=0) h=all[(i+1)%all.length]; }
-    if(!h){ if(SEL){ SEL=null; updSel(); render(); } return; }
+  else { const all=hitsAt(p), si=SEL?all.findIndex(x=>x.kind==='el'&&x.id===SEL):-1; let h=all[0]||null, cyc=null;
+    if(si>=0){ h=all[si]; // keep the selected item under the pointer, even when something covers it
+      if(all.length>1){ const nx=all[(si+1)%all.length], chain=TAPC&&TAPC.id===SEL&&Math.hypot(p.x-TAPC.p.x,p.y-TAPC.p.y)<10*uiK();
+        if(e.altKey) h=nx; else if(String(SEL).startsWith('tb_')) cyc=si>0?all[0].id:null; else cyc=(chain||si===0)?nx.id:all[0].id; } }
+    if(!h){ if(SEL){ SEL=null; CROP_MODE=false; updSel(); render(); } return; }
     pushUndo();
     if(h.kind==='photo'){ const ph=state.photos[h.idx]; if(!ph) return; SEL=null; state.active=h.idx; drag={kind:'photo',p0:p,ox:ph.ox,oy:ph.oy,w:h.r.w,h:h.r.h,ph}; syncPhotoUI(); renderPhotoList(); }
-    else { SEL=h.id; if(String(h.id).startsWith('photo')){ const ix=parseInt(String(h.id).slice(5)); if(state.photos[ix]){ state.active=ix; syncPhotoUI(); renderPhotoList(); } } const o=getOff(h.id); drag={kind:'el',id:h.id,p0:p,dx:o.dx,dy:o.dy}; } }
+    else { selectItem(h.id); const o=getOff(h.id); drag={kind:'el',id:h.id,p0:p,dx:o.dx,dy:o.dy,inv:h.inv,cyc}; } }
   e.preventDefault(); cv.setPointerCapture(e.pointerId); cv.classList.add('grabbing'); updSel(); render(); });
 cv.addEventListener('pointermove',e=>{ const p=canvasPoint(e);
   if(drag&&drag.kind==='photo'){ drag.ph.ox=Math.max(-0.8,Math.min(0.8,drag.ox+(p.x-drag.p0.x)/drag.w)); drag.ph.oy=Math.max(-0.8,Math.min(0.8,drag.oy+(p.y-drag.p0.y)/drag.h)); syncPhotoUI(); render(); }
   else if(drag&&drag.kind==='scale'){ setScale(drag.id,drag.s0*Math.hypot(p.x-drag.c.x,p.y-drag.c.y)/drag.d0); updSel(); render(); }
   else if(drag&&drag.kind==='side'){ const t=drag.L0+(p.x-drag.A.x)*drag.u.x+(p.y-drag.A.y)*drag.u.y-drag.t0, k=setStretch(drag.id,drag.k,drag.k0*Math.max(8,t)/drag.L0), L=drag.L0*k/drag.k0;
-    setOff(drag.id,drag.dx+drag.A.x+drag.u.x*L/2-drag.c.x,drag.dy+drag.A.y+drag.u.y*L/2-drag.c.y); render(); }
+    const d=toLocal(drag.inv,{x:drag.A.x+drag.u.x*L/2-drag.c.x,y:drag.A.y+drag.u.y*L/2-drag.c.y}); setOff(drag.id,drag.dx+d.x,drag.dy+d.y); render(); }
+  else if(drag&&drag.kind==='crop'){ const d=(p.x-drag.p0.x)*drag.u.x+(p.y-drag.p0.y)*drag.u.y, opp={l:'r',r:'l',t:'b',b:'t'}[drag.k];
+    setCrop(drag.id,{...drag.cr,[drag.k]:Math.max(0,Math.min(0.9-drag.cr[opp],drag.cr[drag.k]-d/drag.full))}); updSel(); render(); }
+  else if(drag&&drag.kind==='tbw'){ // text box width: change the wrap width, then keep the far top corner where it was
+    const L=drag.L0+(p.x-drag.p0.x)*drag.u.x+(p.y-drag.p0.y)*drag.u.y, f=FORMATS[state.format];
+    drag.b.w=Math.round(Math.max(0.1,Math.min(0.95,L/(drag.s*f.w)))*1000)/1000; fillTB(drag.b);
+    renderPost(cx,f.w,f.h,state,true); const h=selRect(); if(h){ const F=selFrame(h), q={x:F.c.x+F.ux.x*drag.i*F.w/2-F.uy.x*F.h/2,y:F.c.y+F.ux.y*drag.i*F.w/2-F.uy.y*F.h/2};
+      const o=getOff(drag.id), d=toLocal(drag.inv,{x:drag.pin.x-q.x,y:drag.pin.y-q.y}); setOff(drag.id,o.dx+d.x,o.dy+d.y); } render(); }
   else if(drag&&drag.kind==='rot'){ let a=drag.r0+(Math.atan2(p.y-drag.c.y,p.x-drag.c.x)-drag.a0)*180/Math.PI;
     if(e.shiftKey) a=Math.round(a/15)*15; else { const n=Math.round(a/90)*90; if(Math.abs(a-n)<4) a=n; } setRot(drag.id,a); render(); }
-  else if(drag){ setOff(drag.id,drag.dx+(p.x-drag.p0.x),drag.dy+(p.y-drag.p0.y)); render(); }
+  else if(drag){ const v={x:p.x-drag.p0.x,y:p.y-drag.p0.y};
+    if(drag.cyc&&!drag.moved&&Math.hypot(v.x,v.y)<6*uiK()) return; drag.moved=true; // a tap on the selected item picks the one underneath
+    const d=toLocal(drag.inv,v); setOff(drag.id,drag.dx+d.x,drag.dy+d.y); render(); }
   else { const hd=handleAt(p); cv.style.cursor=hd?handleCursor(hd):''; cv.classList.toggle('grab',!hd&&!!hit(p)); } });
-const endDrag=()=>{ if(drag){ drag=null; cv.classList.remove('grabbing'); } };
+const endDrag=e=>{ if(drag){ const d=drag; drag=null; cv.classList.remove('grabbing');
+  if(e&&e.type==='pointerup'&&d.kind==='el'&&d.cyc&&!d.moved){ selectItem(d.cyc); TAPC={p:d.p0,id:d.cyc}; updSel(); render(); } } };
 $('selFont').innerHTML='<option value="">Template font</option>'+FONTS_ALL.map(f=>`<option value="${f}">${f}</option>`).join('');
 $('selFont').addEventListener('change',async e=>{ if(!SEL) return; pushUndo(); const m=curMap(true), o=m[SEL]||{}; const v=e.target.value; if(v){ m[SEL]={...o,font:v}; } else { const n={...o}; delete n.font; m[SEL]=n; } render(); if(v){ await loadFont(v); render(); } });
 function decoList(create){ state.decos=state.decos||{}; const t=state.decos[state.template]||(create?(state.decos[state.template]={}):null); if(!t) return null; return t[state.format]||(create?(t[state.format]=[]):null); }
@@ -2080,7 +2113,7 @@ let tbTyping=0; $('tbText').addEventListener('input',e=>{ const b=selTB(); if(!b
 $('tbAlign').addEventListener('click',e=>{ const x=e.target.closest('[data-al]'); const b=selTB(); if(!x||!b) return; pushUndo(); const L=tbLayout(CUR_CTX||cv.getContext('2d'),b,cv.width,cv.height); const left=L.x; b.align=x.dataset.al; const W=cv.width; b.x=(b.align==='center'?left+L.w/2:b.align==='right'?left+L.w:left)/W; fillTB(b); render(); });
 $('tbBold').onclick=()=>{ const b=selTB(); if(!b) return; pushUndo(); b.bold=!b.bold; fillTB(b); render(); };
 $('tbItal').onclick=()=>{ const b=selTB(); if(!b) return; pushUndo(); b.italic=!b.italic; fillTB(b); render(); };
-$('tbDup').onclick=()=>{ const b=selTB(); if(!b) return; pushUndo(); const id=Math.random().toString(36).slice(2,8); const o=getOff(SEL); tbList(true).push({...b,id,x:b.x+(o.dx+30)/cv.width,y:b.y+(o.dy+30)/cv.height}); SEL='tb_'+id; updSel(); render(); };
+$('tbDup').onclick=()=>{ const b=selTB(); if(!b) return; pushUndo(); const id=Math.random().toString(36).slice(2,8); const o=getOff(SEL); tbList(true).push({...b,id,x:b.x+(o.dx+30)/cv.width,y:b.y+(o.dy+30)/cv.height}); const cp={}; if(o.s!==1) cp.s=o.s; if(o.rot) cp.rot=o.rot; if(Object.keys(cp).length) curMap(true)['tb_'+id]=cp; SEL='tb_'+id; updSel(); render(); };
 $('tbDel').onclick=()=>{ const l=tbList(false), i=l.findIndex(b=>'tb_'+b.id===SEL); if(i<0) return; pushUndo(); l.splice(i,1); const m=curMap(false); if(m) delete m[SEL]; SEL=null; updSel(); render(); };
 cv.addEventListener('dblclick',()=>{ if(selTB()){ const ta=$('tbText'); ta.focus(); ta.select(); } });
 function selDeco(){ const l=decoList(false); return l?l.find(d=>'add_'+d.id===SEL):null; }
@@ -2103,6 +2136,8 @@ $('dcDup').onclick=()=>{ const d=selDeco(); if(!d) return; pushUndo(); const o=g
 $('dcDel').onclick=()=>{ const l=decoList(false); if(!l) return; pushUndo(); const i=l.findIndex(d=>'add_'+d.id===SEL); if(i>=0) l.splice(i,1); const m=curMap(false); if(m) delete m[SEL]; SEL=null; updSel(); render(); };
 $('selHide').onclick=()=>{ if(!SEL) return; pushUndo(); const m=curMap(true); m[SEL]={...(m[SEL]||{}),hide:true}; SEL=null; updSel(); render(); toast('Item hidden. Tap its name under the post to bring it back.'); };
 $('hiddenList').addEventListener('click',e=>{ const b=e.target.closest('[data-unhide]'); if(!b) return; pushUndo(); const m=curMap(false); if(m&&m[b.dataset.unhide]){ const n={...m[b.dataset.unhide]}; delete n.hide; m[b.dataset.unhide]=n; } updSel(); render(); });
+$('selCrop').onclick=()=>{ CROP_MODE=!CROP_MODE; updSel(); render(); };
+$('selUncrop').onclick=()=>{ if(!SEL) return; pushUndo(); setCrop(SEL,{}); updSel(); render(); };
 $('selReset').onclick=()=>{ if(!SEL) return; pushUndo(); const m=curMap(false); if(m) delete m[SEL]; updSel(); render(); };
 $('allReset').onclick=()=>{ pushUndo(); const m=curMap(false); if(m) for(const k in m) delete m[k]; SEL=null; updSel(); render(); toast('Layout reset to the template for this size'); };
 $('selSize').addEventListener('pointerdown',pushUndo); $('selSize').addEventListener('keydown',pushUndo);
@@ -2115,8 +2150,8 @@ document.addEventListener('keydown',e=>{ const t=e.target, typing=t&&t.closest&&
   if(!SEL||typing) return;
   if((e.key==='Delete'||e.key==='Backspace')&&String(SEL).startsWith('add_')){ e.preventDefault(); $('dcDel').click(); return; }
   if((e.key==='Delete'||e.key==='Backspace')&&String(SEL).startsWith('tb_')){ e.preventDefault(); $('tbDel').click(); return; }
-  const st=e.shiftKey?10:2, m={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key]; if(e.key==='Escape'){ SEL=null; updSel(); render(); return; } if(!m) return;
-  e.preventDefault(); if(!nudgeT) pushUndo(); clearTimeout(nudgeT); nudgeT=setTimeout(()=>{ nudgeT=0; },900); const o=getOff(SEL); setOff(SEL,o.dx+m[0],o.dy+m[1]); render(); });
+  const st=e.shiftKey?10:2, m={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key]; if(e.key==='Escape'){ if(CROP_MODE) CROP_MODE=false; else SEL=null; updSel(); render(); return; } if(!m) return;
+  e.preventDefault(); if(!nudgeT) pushUndo(); clearTimeout(nudgeT); nudgeT=setTimeout(()=>{ nudgeT=0; },900); const o=getOff(SEL), d=toLocal((selRect()||{}).inv,{x:m[0],y:m[1]}); setOff(SEL,o.dx+d.x,o.dy+d.y); render(); });
 cv.addEventListener('pointerup',endDrag); cv.addEventListener('pointercancel',endDrag);
 
 function renderThumbs(){
@@ -2618,13 +2653,13 @@ async function openPost(p,asCopy){
   const n=exampleState();
   const merged={...n,...p,offsets:JSON.parse(JSON.stringify(p.offsets||{})),decos:JSON.parse(JSON.stringify(p.decos||{})),texts:JSON.parse(JSON.stringify(p.texts||{})),extra:JSON.parse(JSON.stringify(p.extra||{})),captions:JSON.parse(JSON.stringify(p.captions||{})),sizes:{...n.sizes,...(p.sizes||{})},fonts:{...n.fonts,...(p.fonts||{})},colors:{...n.colors,...(p.colors||{})},show:{...n.show,...(p.show||{})},wm:{...n.wm,...(p.wm||{})},wa:{...n.wa,...(p.wa||{})},text:{...n.text,...(p.text||{})},
     specs:Array.isArray(p.specs)?p.specs.map(x=>({...x})):n.specs, badges:Array.isArray(p.badges)?p.badges.map(x=>({...x})):n.badges, photos:[],bgPhoto:null,brandImg:null,active:0,libId:asCopy?null:p.id};
-  if(!TEMPLATES[merged.template]) merged.template='showcase'; delete merged.id; delete merged.thumb; delete merged.updatedAt; delete merged.title;
+  merged.layoutV=p.layoutV||1; if(!TEMPLATES[merged.template]) merged.template='showcase'; delete merged.id; delete merged.thumb; delete merged.updatedAt; delete merged.title;
   let missing=0;
   for(const ph of (p.photos||[])){ try{ const r=await restorePhoto(ph); if(r) merged.photos.push(r); else missing++; }catch{ missing++; } }
   try{ merged.bgPhoto=await restorePhoto(p.bgPhoto); }catch{ missing++; }
   try{ merged.brandImg=await restorePhoto(p.brandImg); }catch{ missing++; }
   if(merged.brandLogo==='custom'&&!merged.brandImg) merged.brandLogo='none';
-  state=merged; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); (async()=>{ const fs=new Set([state.fonts.head,state.fonts.body]); JSON.stringify(state.offsets||{}).replace(/"font":"([^"]+)"/g,(m0,f)=>{ fs.add(f); return m0; }); for(const f of fs) await loadFont(f); await scriptFonts(); render(); })();
+  state=merged; S=state; SEL=null; updSel(); clearHistory(); syncUI(); render(); setStatus(''); (async()=>{ const fs=new Set([state.fonts.head,state.fonts.body]); JSON.stringify(state.offsets||{}).replace(/"font":"([^"]+)"/g,(m0,f)=>{ fs.add(f); return m0; }); for(const f of fs) await loadFont(f); await scriptFonts(); migrateTags(); render(); })();
   window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   toast((asCopy?'Copy opened — save it as a new post':'Post opened')+(missing?` · ${missing} image(s) could not be loaded`:''));
 }
@@ -2636,6 +2671,19 @@ async function serPhoto(p,png){
 }
 function makeThumb(){ const f=FORMATS[state.format], tw=260, sc=tw/f.w; const c=document.createElement('canvas'); c.width=tw; c.height=Math.round(f.h*sc); const x=c.getContext('2d'); x.setTransform(sc,0,0,sc,0,0); renderPost(x,f.w,f.h,state,false); return c.toDataURL('image/jpeg',0.72); }
 // saves the current state (new or update); returns how many images could not be stored
+/* Upgrade for posts saved before layoutV 2: photo tags now live inside their photo item, so a tag's own move/size
+   follows its photo's move/size. Give each tag the opposite offset so an old post opens exactly as it was saved
+   (only photos that were moved or resized, which is all older versions could do). */
+function migrateTags(){ if((state.layoutV||1)>=2) return; const O=state.offsets||{}, c=document.createElement('canvas'), x=c.getContext('2d');
+  for(const t of Object.keys(O)) for(const f of Object.keys(O[t]||{})){ const m=O[t][f], F=FORMATS[f];
+    if(!m||!F||!TEMPLATES[t]||!Object.keys(m).some(k=>k.startsWith('photo'))) continue;
+    c.width=F.w; c.height=F.h; const keep=hitRects; MIG={}; try{ renderPost(x,F.w,F.h,{...state,template:t,format:f},true); } finally{ hitRects=keep; } const rec=MIG; MIG=null;
+    for(const id in rec){ const R=rec[id], P=R.parent&&rec[R.parent], lo=m[id]||{}, po=R.parent&&m[R.parent];
+      if(!P||!/^photo/.test(R.parent)||!/^label/.test(id)||!po||po.hide||po.rot||po.sx||po.sy||po.crop) continue;
+      const sp=po.s||1, pdx=po.dx||0, pdy=po.dy||0; if(sp===1&&!pdx&&!pdy) continue;
+      const n={...lo,dx:Math.round((R.cx+(lo.dx||0)-P.cx-pdx)/sp-R.cx+P.cx),dy:Math.round((R.cy+(lo.dy||0)-P.cy-pdy)/sp-R.cy+P.cy)}, ls=Math.round((lo.s||1)/sp*1000)/1000;
+      if(ls!==1) n.s=ls; else delete n.s; m[id]=n; } }
+  state.layoutV=2; }
 async function saveCurrent(extra){
   let skipped=0; const photos=[];
   for(const p of state.photos){ try{ photos.push(await serPhoto(p)); }catch{ skipped++; } }
@@ -2643,7 +2691,7 @@ async function saveCurrent(extra){
   keepCap(); const doc={title:state.text.headline||'Untitled post',updatedAt:Date.now(),format:state.format,template:state.template,theme:state.theme,colors:{...state.colors},show:{...state.show},wm:{...state.wm},wa:{...state.wa},offsets:JSON.parse(JSON.stringify(state.offsets||{})),decos:JSON.parse(JSON.stringify(state.decos||{})),texts:JSON.parse(JSON.stringify(state.texts||{})),extra:JSON.parse(JSON.stringify(state.extra||{})),
     brandLogo:state.brandLogo,textScale:state.textScale,look:state.look,footStyle:state.footStyle||'auto',sizes:{...state.sizes},fonts:{...state.fonts},product:state.product,writeup:state.writeup,lang:state.lang,tone:state.tone,text:{...state.text,bullets:bulletsList()},
     specs:specList().map(r=>({k:r.k||'',v:r.v||''})),badges:state.badges.map(b=>({icon:b.icon,label:b.label||''})),caption:state.caption,hashtags:state.hashtags,waText:state.waText,captions:JSON.parse(JSON.stringify(state.captions||{})),capLang:state.capLang||'',
-    photos,bgPhoto:bg,brandImg:br,thumb:makeThumb(),scheduledAt:state.scheduledAt||null,draft:false,...(extra||{})};
+    layoutV:state.layoutV||1,photos,bgPhoto:bg,brandImg:br,thumb:makeThumb(),scheduledAt:state.scheduledAt||null,draft:false,...(extra||{})};
   if(state.libId) await db.collection('posts').doc(state.libId).set(doc); else { const ref=await db.collection('posts').add(doc); state.libId=ref.id; }
   return skipped;
 }
