@@ -88,3 +88,76 @@ def test_watermark_only_on_photos_and_background(page):
         if name != "headline":  # the headline sits on the background, so the watermark shows between its letters
             assert a == b, name
     assert off_photo != on_photo
+
+
+WANT = ["deco_band", "deco_stripe", "since", "sincelab", "year", "logo", "headline", "fitment", "pill", "pk", "pv",
+        "photo0", "photo1", "photo2", "label", "feat", "ficon", "fline", "ftext", "contact", "phoneicon", "phones",
+        "divider", "email", "web", "icon", "address", "rule", "edge", "tagline", "tagtext", "tagrule"]
+
+
+def test_phone_tap_selects_and_drag_moves_every_piece(browser, base_url):
+    ctx = browser.new_context(viewport={"width": 430, "height": 932}, has_touch=True, is_mobile=True, device_scale_factor=2)
+    ctx.route("**/config.js", lambda r: r.fulfill(status=200, content_type="application/javascript", body="window.PARCO_CONFIG={users:[]};"))
+    pg = ctx.new_page()
+    errors = []
+    pg.on("pageerror", lambda e: errors.append(str(e)))
+    pg.goto(base_url)
+    pg.wait_for_function("() => typeof state==='object' && state.photos.length>0 && !document.getElementById('app').hidden")
+    pg.evaluate(SETUP)
+    pg.evaluate("() => { state.template='brandHero'; state.format='portrait'; render(); }")
+    pg.wait_for_timeout(300)
+    pg.locator("#cv").scroll_into_view_if_needed()
+    pg.wait_for_timeout(300)
+    def client(x, y):
+        return pg.evaluate("([x,y]) => { const r=cv.getBoundingClientRect(); return [r.left+x*r.width/cv.width, r.top+y*r.height/cv.height]; }", [x, y])
+    failed = []
+    cdp = ctx.new_cdp_session(pg)
+    for want in WANT:
+        pg.evaluate("() => { SEL=null; TAPC=null; state.offsets={}; render(); }")
+        pg.wait_for_timeout(120)
+        c = pg.evaluate("(id) => { const h=hitRects.find(h=>h.id===id); const f=selFrame(h); return [f.c.x,f.c.y]; }", want)
+        ok = False
+        for _ in range(8):  # tap until the piece is selected (buried pieces need a few taps)
+            pg.touchscreen.tap(*client(*c))
+            pg.wait_for_timeout(120)
+            if pg.evaluate("() => SEL") == want:
+                ok = True
+                break
+        if not ok:
+            failed.append((want, "not selectable")); continue
+        a, b = client(*c), client(c[0] + 60, c[1])
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": a[0], "y": a[1]}]})
+        for i in range(1, 7):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": a[0] + (b[0] - a[0]) * i / 6, "y": a[1]}]})
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(150)
+        c2 = pg.evaluate("(id) => { const h=hitRects.find(h=>h.id===id); const f=selFrame(h); return [f.c.x,f.c.y]; }", want)
+        if abs(c2[0] - c[0] - 60) > 2 or abs(c2[1] - c[1]) > 2:
+            failed.append((want, "moved", round(c2[0] - c[0], 1), round(c2[1] - c[1], 1)))
+    ctx.close()
+    assert not errors, errors
+    assert not failed, failed
+
+
+def test_address_is_readable(page):
+    page.evaluate(SETUP)
+    for fmt in FORMATS:
+        set_format(page, fmt)
+        page.evaluate("() => { state.template='brandHero'; render(); }")
+        page.wait_for_timeout(150)
+        h = page.evaluate("() => { const r=hitRects.find(h=>h.id==='address'); return r.r.h; }")
+        size = page.evaluate("() => { const c=document.createElement('canvas').getContext('2d'); return fitLine(c,state.text.address,600,BODY,26,11,1080-80-28-14,0); }")
+        assert size >= 20, size
+
+
+def test_ideas_lead_with_brand_and_use_the_brief(page, ai):
+    seen = []
+    ai.handler = lambda p: (seen.append(p), {"ideas": [{"name": "x", "template": "showcase", "look": "classic", "theme": "parco"}]})[1]
+    page.click("#ideasBtn")
+    page.wait_for_function("() => !document.getElementById('ideasGo').disabled")
+    page.fill("#ideasBrief", "green theme, premium look for Hino parts")
+    page.click("#ideasGo")
+    page.wait_for_function("() => !document.getElementById('ideasGo').disabled")
+    assert any("green theme, premium look for Hino parts" in p for p in seen)
+    first = page.evaluate("() => ideaSeen[ideaSeen.length-3]")
+    assert first["template"].startswith("brand") and first["theme"] in ("forest", "navy")

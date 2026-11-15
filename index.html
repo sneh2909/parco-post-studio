@@ -784,7 +784,7 @@ function el(id,box,fn,opt){ const ctx=CUR_CTX; if(!ctx) return fn(box); ELSEEN.a
     if(opt.fit&&(sx!==1||sy!==1)){ const w=box.w*sx, h=box.h*sy; b={x:cx-w/2,y:cy-h/2,w,h}; }
     if(opt.fit){ const c=o.crop; PH_MAP=null; if(c&&(c.l||c.t||c.r||c.b)){ const full=b; b={x:full.x+full.w*(c.l||0),y:full.y+full.h*(c.t||0),w:full.w*(1-(c.l||0)-(c.r||0)),h:full.h*(1-(c.t||0)-(c.b||0))}; PH_MAP={from:b,to:full}; } } }
   if(o.hide) ctx.globalAlpha=0;
-  if(collecting&&b&&ctx.globalAlpha>0) hitRects.push({kind:'el',id,r:mapRect(ctx,b),q:mapQuad(ctx,b),inv});
+  if(collecting&&b&&ctx.globalAlpha>0) hitRects.push({kind:'el',id,r:mapRect(ctx,b),q:mapQuad(ctx,b),inv,fit:!!opt.fit});
   const pH=HEAD,pB=BODY,pS=SCRIPT; if(o.font){ const f=`'${o.font}','Noto Sans Gujarati','Noto Sans Devanagari',sans-serif`; HEAD=f; BODY=f; SCRIPT=f; }
   if(MIG&&box) MIG[id]={parent:EL_STACK[EL_STACK.length-1]||null,cx:box.x+box.w/2,cy:box.y+box.h/2};
   EL_STACK.push(id);
@@ -1414,14 +1414,16 @@ function barFooter(ctx,W,H,c,v){
       if(light){ ctx.lineWidth=2; ctx.strokeStyle=alpha(c.ink,.12); rr(ctx,pad,y,W-2*pad,bh,22); ctx.stroke(); }
       const cells=[]; const ph=splitBar(T.phones).slice(0,2); if(ph.length) cells.push({ic:'phone',l:'CALL US',lines:ph,w:.36}); if(T.email) cells.push({ic:'mail',l:'EMAIL US',lines:[T.email],w:.35}); if(T.web) cells.push({ic:'globe',l:'VISIT US',lines:[T.web],w:.29});
       const tot=cells.reduce((a,b)=>a+b.w,0)||1; let x=pad+10; const avail=W-2*pad-20;
-      cells.forEach((cl,i)=>{ const cw=avail*cl.w/tot; if(i){ ctx.fillStyle=sep; ctx.fillRect(x,y+16,2,bh-32); }
-        const r=23, cx=x+16+r, cy=y+bh/2; ctx.lineWidth=2.4; ctx.strokeStyle=ic; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); icon(ctx,cl.ic,cx-13,cy-13,26,ic,2.2);
-        const tx=cx+r+14, tw=x+cw-tx-10; const vs=Math.min(...cl.lines.map(l=>fitLine(ctx,l,700,BODY,(cl.ic==='phone'?27:23)*F,11,tw,0))); const ls=14*F, total=ls*1.3+cl.lines.length*vs*1.16; let ty=y+(bh-total)/2;
-        setFont(ctx,700,ls,BODY,2); ctx.fillStyle=lab; txt(ctx,cl.l,tx,ty,'left'); ty+=ls*1.3; setFont(ctx,700,vs,BODY,0); ctx.fillStyle=fg; cl.lines.forEach((l,j)=>txt(ctx,l,tx,ty+j*vs*1.16,'left')); x+=cw; }); });
+      cells.forEach((cl,i)=>{ const cw=avail*cl.w/tot, x0=x; if(i) el('divider',{x:x0,y:y+16,w:2,h:bh-32},()=>{ ctx.fillStyle=sep; ctx.fillRect(x0,y+16,2,bh-32); });
+        const r=23, cx=x+16+r, cy=y+bh/2; el(cl.ic==='phone'?'phoneicon':'icon',{x:cx-r-2,y:cy-r-2,w:2*r+4,h:2*r+4},()=>{ ctx.lineWidth=2.4; ctx.strokeStyle=ic; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); icon(ctx,cl.ic,cx-13,cy-13,26,ic,2.2); });
+        const tx=cx+r+14, tw=x+cw-tx-10; const vs=Math.min(...cl.lines.map(l=>fitLine(ctx,l,700,BODY,(cl.ic==='phone'?27:23)*F,11,tw,0))); const ls=14*F, total=ls*1.3+cl.lines.length*vs*1.16; const ty0=y+(bh-total)/2;
+        el(cl.ic==='phone'?'phones':cl.ic==='mail'?'email':'web',{x:tx,y:ty0,w:tw,h:total},()=>{ let ty=ty0; setFont(ctx,700,ls,BODY,2); ctx.fillStyle=lab; txt(ctx,cl.l,tx,ty,'left'); ty+=ls*1.3; setFont(ctx,700,vs,BODY,0); ctx.fillStyle=fg; cl.lines.forEach((l,j)=>txt(ctx,l,tx,ty+j*vs*1.16,'left')); }); x+=cw; }); });
     if(T.address){ const ya=y0+CB1, isz=28, mw=W-2*pad-isz-14; fitLine(ctx,T.address,600,BODY,26*F,11,mw,0); const tw=ctx.measureText(T.address).width, ax=(W-(tw+isz+14))/2;
-      el('address',{x:ax,y:ya,w:tw+isz+14,h:CB2},()=>{ fitLine(ctx,T.address,600,BODY,26*F,11,mw,0); icon(ctx,'pin',ax,ya+(CB2-isz)/2,isz,c.pop,2.3); ctx.fillStyle=outFg; ctx.textBaseline='middle'; ctx.textAlign='left'; ctx.fillText(T.address,ax+isz+14,ya+CB2/2+1); }); }
+      el('address',{x:ax,y:ya,w:tw+isz+14,h:CB2},()=>{ el('icon',{x:ax,y:ya+(CB2-isz)/2,w:isz,h:isz},()=>icon(ctx,'pin',ax,ya+(CB2-isz)/2,isz,c.pop,2.3)); fitLine(ctx,T.address,600,BODY,26*F,11,mw,0); ctx.fillStyle=outFg; ctx.textBaseline='middle'; ctx.textAlign='left'; ctx.fillText(T.address,ax+isz+14,ya+CB2/2+1); }); }
   }
-  if(tagH){ const yt=H-tagH; el('tagline',{x:0,y:yt,w:W,h:tagH},()=>{ fitLine(ctx,T.tagline,600,BODY,27*F,13,W-160,1.2); const tw=ctx.measureText(T.tagline).width; ctx.fillStyle=outFg; ctx.globalAlpha=.9; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(T.tagline,W/2,yt+tagH/2+1); ctx.globalAlpha=1; ctx.fillStyle=c.pop; const lw=Math.max(0,Math.min(90,(W-tw)/2-50)); if(lw>16){ ctx.fillRect(W/2-tw/2-lw-24,yt+tagH/2,lw,3); ctx.fillRect(W/2+tw/2+24,yt+tagH/2,lw,3); } }); }
+  if(tagH){ const yt=H-tagH; el('tagline',{x:0,y:yt,w:W,h:tagH},()=>{ const sz=fitLine(ctx,T.tagline,600,BODY,27*F,13,W-160,1.2); const tw=ctx.measureText(T.tagline).width;
+    el('tagtext',{x:W/2-tw/2,y:yt+tagH/2-sz*0.65,w:tw,h:sz*1.3},()=>{ setFont(ctx,600,sz,BODY,1.2); ctx.fillStyle=outFg; ctx.globalAlpha=.9; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(T.tagline,W/2,yt+tagH/2+1); ctx.globalAlpha=1; });
+    const lw=Math.max(0,Math.min(90,(W-tw)/2-50)); if(lw>16) [W/2-tw/2-lw-24,W/2+tw/2+24].forEach(lx=>el('tagrule',{x:lx,y:yt+tagH/2-3,w:lw,h:9},()=>{ ctx.fillStyle=c.pop; ctx.fillRect(lx,yt+tagH/2,lw,3); })); }); }
 }
 function refBg(ctx,W,H,c,kind){
   paintLook(ctx,W,H,c,()=>{
@@ -1430,7 +1432,7 @@ function refBg(ctx,W,H,c,kind){
     else { const g=ctx.createLinearGradient(0,0,W*0.3,H); g.addColorStop(0,kind==='mint'?shade(c.paper,-0.02):'#eef5fb'); g.addColorStop(1,'#ffffff'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
     if(!S._ownBg) drawBg(ctx,{x:0,y:0,w:W,h:H*0.62},'none',kind==='grey'?'#eef0f3':'#ffffff',0.3);
   });
-  logoPattern(ctx,W,H,LOOK==='night'?0.05:LOOK==='site'?0.06:0.045);
+  if(S.wm.mode!=='post') logoPattern(ctx,W,H,LOOK==='night'?0.05:LOOK==='site'?0.06:0.045);
 }
 
 /* ---------- WhatsApp enquiry button (any template) ---------- */
@@ -1863,7 +1865,7 @@ function bArrange(R,k,mode,g,stack){ const fit=(i,box,ax,ay)=>{ const s=bCard(i,
   const hs=bCard(0,R.w*0.52,R.h), hx=R.x+(R.w-hs.w)/2, sw=(R.w-hs.w)/2-g, cor=mode==='corners', sh=Math.min(R.h*(cor?0.62:0.8),hs.h*(cor?0.66:0.74)), sy=cor?R.y+R.h-sh:R.y+(R.h-sh)*0.62;
   return [{i:0,x:hx,y:R.y+(cor?0:(R.h-hs.h)/2),w:hs.w,h:hs.h},fit(1,{x:R.x,y:sy,w:sw,h:sh},cor?0:1,cor?1:0.5),fit(2,{x:hx+hs.w+g,y:sy,w:sw,h:sh},cor?1:0,cor?1:0.5)]; }
 // one narrow photo: put the feature cards in a column beside it so the photo gets the full height (no empty sides)
-function bSolo(R,feats,L,top){ if(!feats.length||L.tall) return null; const colW=Math.min(420,R.w*0.4), hs=bCard(0,R.w-colW-L.g,R.h); if(hs.w>R.w*0.6) return null;
+function bSolo(R,feats,L,top){ if(!feats.length||L.tall||phAR(0)>=1.05) return null; /* wide photos keep the full width */ const colW=Math.min(420,R.w*0.4), hs=bCard(0,R.w-colW-L.g,R.h); if(hs.w>R.w*0.6) return null;
   const tot=hs.w+L.g+colW, x0=R.x+(R.w-tot)/2; return {hero:{i:0,x:x0,y:top?R.y:R.y+(R.h-hs.h)/2,w:hs.w,h:hs.h},feat:{x:x0+hs.w+L.g,y:R.y,w:colW,h:R.h}}; }
 function bTwoUp(R,k,g){ if(k===1) return bArrange(R,1,'center',g); const top={x:R.x,y:R.y,w:R.w,h:R.h*0.64-g/2}, bot={x:R.x,y:R.y+R.h*0.64+g/2,w:R.w,h:R.h*0.36-g/2};
   const s=bCard(0,top.w,top.h); return [{i:0,x:top.x+(top.w-s.w)/2,y:top.y+(top.h-s.h),w:s.w,h:s.h}].concat(bRow([1,2].slice(0,k-1),bot,g)); }
@@ -2167,7 +2169,12 @@ function render(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
 }); }
 function canvasPoint(e){ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*cv.width/r.width,y:(e.clientY-r.top)*cv.height/r.height}; }
 function inQuad(p,q){ let sg=0; for(let i=0;i<4;i++){ const a=q[i], b=q[(i+1)%4], cr=(b[0]-a[0])*(p.y-a[1])-(b[1]-a[1])*(p.x-a[0]); if(!cr) continue; const s=cr>0?1:-1; if(!sg) sg=s; else if(s!==sg) return false; } return true; }
-function hitsAt(p){ const out=[]; for(let i=hitRects.length-1;i>=0;i--){ const h=hitRects[i], r=h.r; if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h&&(!h.q||inQuad(p,h.q))) out.push(h); } return out; }
+// thin items (lines, dividers) get a minimum touch target of 2*slop across
+function hitOne(h,p,slop){ const r=h.r; if(p.x<r.x-slop||p.x>r.x+r.w+slop||p.y<r.y-slop||p.y>r.y+r.h+slop) return false;
+  if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h&&(!h.q||inQuad(p,h.q))) return true;
+  if(!slop) return false; const f=selFrame(h), m=2*slop; if(f.w>=m&&f.h>=m) return false;
+  const dx=p.x-f.c.x, dy=p.y-f.c.y; return Math.abs(dx*f.ux.x+dy*f.ux.y)<=Math.max(f.w,m)/2&&Math.abs(dx*f.uy.x+dy*f.uy.y)<=Math.max(f.h,m)/2; }
+function hitsAt(p){ const out=[], slop=Math.max(8,uiK()*8); for(let i=hitRects.length-1;i>=0;i--){ if(hitOne(hitRects[i],p,slop)) out.push(hitRects[i]); } return out; }
 function hit(p){ return hitsAt(p)[0]||null; }
 let drag=null;
 function curMap(create){ state.offsets=state.offsets||{}; const t=state.offsets[state.template]||(create?(state.offsets[state.template]={}):null); if(!t) return null; return t[state.format]||(create?(t[state.format]={}):null); }
@@ -2199,7 +2206,7 @@ function selFrame(h){ const r=h.r, q=h.q||[[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+
   const w=Math.hypot(q[1][0]-q[0][0],q[1][1]-q[0][1]), hh=Math.hypot(q[3][0]-q[0][0],q[3][1]-q[0][1]);
   const ux=w>0.01?{x:(q[1][0]-q[0][0])/w,y:(q[1][1]-q[0][1])/w}:{x:1,y:0}, uy=hh>0.01?{x:(q[3][0]-q[0][0])/hh,y:(q[3][1]-q[0][1])/hh}:{x:-ux.y,y:ux.x};
   return {c:{x:(q[0][0]+q[2][0])/2,y:(q[0][1]+q[2][1])/2},w,h:hh,ux,uy}; }
-function selHandles(h){ const f=selFrame(h), ex=f.w/2+6, ey=f.h/2+6, sid=String(h.id), sh=canStretch(sid), tb=sid.startsWith('tb_'), ro=Math.max(56,uiK()*34), L=[];
+function selHandles(h){ const f=selFrame(h), ex=f.w/2+6, ey=f.h/2+6, sid=String(h.id), sh=canStretch(sid)&&(h.fit||/^(deco_|add_|tb_)/.test(sid)), tb=sid.startsWith('tb_'), ro=Math.max(56,uiK()*34), L=[];
   const add=(kind,i,j,lx,ly)=>L.push({kind,i,j,lx,ly,x:f.c.x+f.ux.x*lx+f.uy.x*ly,y:f.c.y+f.ux.y*lx+f.uy.y*ly});
   [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([i,j])=>add('corner',i,j,i*ex,j*ey));
   // side handles only when the item is big enough along that direction that its middle can still be grabbed to move it
@@ -2219,7 +2226,9 @@ function drawSel(ctx,h){ const {f,L,ex,ey,ro,ry}=selHandles(h), blue='#1f74c9', 
       ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x,y,6,-Math.PI*0.9,Math.PI*0.5); ctx.stroke(); } });
   ctx.restore(); }
 function handleAt(p){ const h=selRect(); if(!h) return null; const H=selHandles(h), tol=Math.max(26,uiK()*18); let best=null, bd=tol;
-  H.L.forEach(k=>{ const d=Math.hypot(p.x-k.x,p.y-k.y); if(d<=bd){ bd=d; best=k; } }); return best?{...best,f:H.f}:null; }
+  // a press inside a small item moves it; its corners are still reachable from just outside
+  const small=(H.f.w<2.6*tol||H.f.h<2.6*tol)&&hitOne(h,p,Math.max(8,uiK()*8));
+  H.L.filter(k=>!small||k.kind==='rot').forEach(k=>{ const d=Math.hypot(p.x-k.x,p.y-k.y); if(d<=bd){ bd=d; best=k; } }); return best?{...best,f:H.f}:null; }
 function handleCursor(hd){ if(hd.kind==='rot') return 'grab'; const a=Math.atan2(hd.y-hd.f.c.y,hd.x-hd.f.c.x)*180/Math.PI; return ['ew-resize','nwse-resize','ns-resize','nesw-resize'][Math.round(((a%180)+180)%180/45)%4]; }
 function updSel(){ const tb=selTB(); $('tbCtl').hidden=!tb; if(tb) fillTB(tb); const has=!!SEL, sid=String(SEL||''), isPh=sid.startsWith('photo'), isAdd=sid.startsWith('add_')||!!tb, isDeco=sid.startsWith('deco_')||isAdd; const dd=isAdd?selDeco():null; $('decoCtl').hidden=!dd; if(dd){ $('dcK').value=dd.k||1; $('dcKo').textContent=Math.round((dd.k||1)*100)+'%'; $('dcN').value=dd.n||1; $('dcNo').textContent=Math.round((dd.n||1)*100)+'%'; $('dcNWrap').hidden=!(DECOS[dd.type]||{}).d; $('dcColor').value=dd.color; $('dcOp').value=dd.op??1; $('dcOpo').textContent=Math.round((dd.op??1)*100)+'%'; $('dcRot').value=dd.rot||0; $('dcRoto').textContent=(dd.rot||0)+'°'; $('dcLayer').textContent=dd.back?'Bring to front':'Send behind'; } $('selHide').hidden=!has||isAdd; if(isAdd){ setTimeout(()=>{ $('selHide').hidden=true; }); } $('selReset').hidden=!has; $('selSizeWrap').hidden=!has; $('selHide').hidden=!has; $('selFontWrap').hidden=!has||isPh||isDeco; $('selCrop').hidden=!isPh; $('selCrop').setAttribute('aria-pressed',String(CROP_MODE)); $('selCrop').textContent=CROP_MODE?'✂ Cropping (tap to finish)':'✂ Crop photo'; $('selUncrop').hidden=!(isPh&&getOff(SEL).crop); const t=$('moveTxt');
   if(has){ t.innerHTML='Selected: <b></b> · drag to move, a corner to resize, '+(isPh&&CROP_MODE?'a side handle to crop, ':canStretch(SEL)?(sid.startsWith('tb_')?'a side handle to change the width, ':'a side handle to stretch, '):'')+'the round handle to rotate (Shift: 15° steps). Tap it again to pick the item underneath (Alt+click on a computer).'; t.querySelector('b').textContent=elName(SEL); const o=getOff(SEL); $('selSize').value=o.s; $('selSizeo').textContent=Math.round(o.s*100)+'%'; const m=curMap(false); $('selFont').value=(m&&m[SEL]&&m[SEL].font)||''; }
@@ -2726,8 +2735,11 @@ function ideaAddons(d){ const keep=a=>(a||[]).filter(x=>!x.ai), decos={...state.
   decos[d.template]={...cur}; Object.keys(FORMATS).forEach(fmt=>{ decos[d.template][fmt]=keep(cur[fmt]).concat(ideaDecosFor(d,fmt)); });
   texts[d.template]=keep(state.texts&&state.texts[d.template]).concat(ideaTexts(d)); return {decos,texts}; }
 function ideaState(d){ const t=THEMES[d.theme]||THEMES.parco; return {...state,template:d.template,look:d.look||'auto',theme:d.theme,colors:{ink:t.ink,blue:t.blue,pop:t.pop,accent:t.accent,paper:t.paper},fonts:{head:d.head||state.fonts.head,body:d.body||state.fonts.body},footStyle:d.foot||'auto',offsets:{},...ideaAddons(d)}; }
-function localIdeas(n){ const fit=Object.keys(TEMPLATES).filter(k=>tplFits(TEMPLATES[k],Math.max(1,Math.min(4,state.photos.length||1)))&&k!==state.template); const looks=['classic','night','site'], th=Object.keys(THEMES), heads=['Barlow Condensed','Oswald','Teko','Bebas Neue','Saira Condensed','Anton','Rajdhani','Fjalla One'];
-  const out=[]; let i=ideaSeen.length; while(out.length<n){ const t=fit.length?fit[i%fit.length]:state.template; out.push({template:t,look:looks[(i+1)%3],theme:th[(i*2)%th.length],head:heads[i%heads.length],body:'Barlow',foot:'auto',name:TEMPLATES[t].name+' · '+LOOKS[looks[(i+1)%3]].name,why:'A fresh mix of layout, colours and type for the same post.'}); i++; } return out; }
+function brandIdea(i){ const ks=Object.keys(TEMPLATES).filter(t=>TEMPLATES[t].brand), t=ks.filter(k=>k!==state.template)[i%3]||ks[0], navy=i%2===1;
+  return {template:t,look:navy?'night':'classic',theme:navy?'navy':'forest',head:'Barlow Condensed',body:'Barlow',foot:'brand',name:TEMPLATES[t].name+' · '+(navy?'Navy':'Green'),why:"PARCO's approved poster style: logo card, one-line headline, photo cards and feature cards."}; }
+function localIdeas(n){ const k0=Math.max(1,Math.min(4,state.photos.length||1)), out0=[]; if(k0<=3) for(let j=0;j<Math.min(2,n);j++) out0.push(brandIdea(ideaSeen.length+j)); n-=out0.length;
+  const fit=Object.keys(TEMPLATES).filter(k=>tplFits(TEMPLATES[k],k0)&&!TEMPLATES[k].brand&&k!==state.template); const looks=['classic','night','site'], th=Object.keys(THEMES), heads=['Barlow Condensed','Oswald','Teko','Bebas Neue','Saira Condensed','Anton','Rajdhani','Fjalla One'];
+  const out=[]; let i=ideaSeen.length; while(out.length<n){ const t=fit.length?fit[i%fit.length]:state.template; out.push({template:t,look:looks[(i+1)%3],theme:th[(i*2)%th.length],head:heads[i%heads.length],body:'Barlow',foot:'auto',name:TEMPLATES[t].name+' · '+LOOKS[looks[(i+1)%3]].name,why:'A fresh mix of layout, colours and type for the same post.'}); i++; } return out0.concat(out); }
 function ideaBrief(){ const t=$('ideasBrief'); return t?t.value.replace(/\s+/g,' ').trim().slice(0,400):''; }
 async function getIdeas(){ const brief=ideaBrief();
   const n=Math.max(1,Math.min(4,state.photos.length||1)); const opts=Object.entries(TEMPLATES).filter(([k,t])=>tplFits(t,n)).map(([k,t])=>`${k}: ${t.name} — ${t.note}`).join('\n');
@@ -2741,7 +2753,7 @@ Looks: classic (white, indigo & orange), night (deep indigo, amber glow), site (
 Colour themes: ${Object.entries(THEMES).map(([k,t])=>k+' ('+t.name+')').join(', ')}
 Headline fonts: ${FONTS_ALL.join(', ')}
 Contact styles: brand, band, plain, navy, dark, light
-The Brand Poster templates (brand*) are PARCO's approved design language; they look best with the forest or navy themes and the brand contact style.
+The Brand Poster templates (brand*) are PARCO's approved design language. Make the first idea a Brand Poster with the forest theme (classic look) or the navy theme (night look) and the brand contact style.
 ${brief?'Brief from the PARCO team (follow it when choosing template, look, theme and fonts; do not change their product text): '+brief+'\n':''}Avoid repeating these already shown: ${ideaSeen.map(d=>d.template+'/'+d.look+'/'+d.theme).join('; ')||'none'}
 Decorations (optional, up to ${IDEA_MAX.decos} per idea; use the key): ${Object.entries(DECOS).map(([k,d])=>k+' ('+d.n+')').join(', ')}
 Decoration colours: ${Object.keys(DECO_COLORS).join(', ')}
@@ -2753,6 +2765,7 @@ Return only JSON: {"ideas":[{"name":"short catchy name","template":"key","look":
     let r; try{ r=await sample.json(prompt,o); }catch(e){ if(o.images&&e&&['images_unavailable','image_rejected','prompt_too_large'].includes(e.code)){ delete o.images; r=await sample.json(prompt,o); } else throw e; }
     let list=(r&&r.ideas)||[];
     list=list.filter(d=>d&&TEMPLATES[d.template]).map(d=>({...d,look:LOOKS[d.look]?d.look:'classic',theme:THEMES[d.theme]?d.theme:'parco',head:FONTS_ALL.includes(d.head)?d.head:'Barlow Condensed',body:FONTS_ALL.includes(d.body)?d.body:'Barlow',foot:['brand','band','plain','navy','dark','light'].includes(d.foot)?d.foot:'auto',...cleanIdeaExtras(d,state.product+' '+state.writeup)}));
+    if(n<=3&&!list.some(d=>TEMPLATES[d.template].brand)) list=[brandIdea(ideaSeen.length)].concat(list);
     if(list.length<3) list=list.concat(localIdeas(3-list.length)); return {list:list.slice(0,3),ai:true}; }
   catch(e){ return {list:localIdeas(3),ai:false,err:e&&e.code}; }
 }
