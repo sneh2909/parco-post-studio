@@ -35,7 +35,8 @@ def setup(page, ai):
 def test_validation_rules(page, ai):
     setup(page, ai)
     r = page.evaluate("async () => (await getIdeas()).list")
-    d = r[0]
+    assert r[0]["template"].startswith("brand")  # a Brand Poster idea leads; the AI's own ideas follow
+    d = r[1]
     assert len(d["decos"]) == 4
     assert [x["type"] for x in d["decos"]] == ["gear", "dots", "ring", "sparkle"]
     dots = d["decos"][1]
@@ -63,9 +64,9 @@ def test_preview_apply_undo_all_sizes(page, ai):
     before = page.evaluate("() => JSON.stringify({d:state.decos,t:state.texts,tpl:state.template,th:state.theme})")
     page.click("#ideasBtn")
     page.wait_for_selector("#ideasGrid .idea canvas")
-    assert "2 tags" in page.inner_text("#ideasGrid .idea:first-child small")
+    assert "2 tags" in page.inner_text("#ideasGrid .idea:nth-child(2) small")
     # preview canvases differ between idea 1 (with decos) and the same idea without
-    page.click("#ideasGrid .idea:first-child .btn")
+    page.click("#ideasGrid .idea:nth-child(2) .btn")
     st = page.evaluate("() => ({decos:state.decos.showcase, texts:state.texts.showcase})")
     for fmt in FORMATS:
         lst = st["decos"][fmt]
@@ -84,7 +85,7 @@ def test_preview_apply_undo_all_sizes(page, ai):
         assert sum(h.startswith("add_ai") for h in hits) == 4 and sum(h.startswith("tb_ai") for h in hits) == 2
     # applying another idea replaces the AI items, keeps the user's
     page.click("#ideasBtn"); page.wait_for_selector("#ideasGrid .idea canvas")
-    page.click("#ideasGrid .idea:first-child .btn")
+    page.click("#ideasGrid .idea:nth-child(2) .btn")
     assert page.evaluate("() => state.texts.showcase.length") == 3
     page.click("#undoBtn")
     page.click("#undoBtn")
